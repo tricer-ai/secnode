@@ -19,7 +19,7 @@ SecNode is a comprehensive security framework for AI applications, from simple w
 ### Installation
 
 ```bash
-pip install tricer-secnode
+pip install secnode
 ```
 
 ### Basic Usage

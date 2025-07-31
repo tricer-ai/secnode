@@ -48,7 +48,7 @@ guard = GuardNode(
 ## 🏗️ Recommended Project Structure
 
 ```
-tricer-secnode/
+secnode/
 ├── pyproject.toml                    # ✅ Package configuration
 ├── README.md                         # ✅ Project overview  
 ├── ARCHITECTURE.md                   # ✅ This document

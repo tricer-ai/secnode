@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "tricer-secnode"
+name = "secnode"
 version = "0.1.0"
 description = "Tricer SecNode: The Native Security Layer for AI Agents"
 readme = "README.md"

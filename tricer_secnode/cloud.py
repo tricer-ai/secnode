@@ -150,7 +150,7 @@ class CloudSyncer:
             headers = {
                 "Authorization": f"Bearer {self.config.api_key}",
                 "Content-Type": "application/json",
-                "User-Agent": "tricer-secnode/0.1.0",
+                "User-Agent": "secnode/0.1.0",
             }
             
             timeout = aiohttp.ClientTimeout(total=self.config.timeout)
@@ -179,7 +179,7 @@ class CloudSyncer:
         # Add timestamp and metadata
         enriched_entry = {
             "timestamp": datetime.utcnow().isoformat(),
-            "source": "tricer-secnode",
+            "source": "secnode",
             "version": "0.1.0",
             **log_entry
         }
