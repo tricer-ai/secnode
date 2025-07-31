@@ -103,10 +103,9 @@ policy = ToolCallWhitelistPolicy(
 from tricer_secnode import PIIDetectionPolicy
 
 policy = PIIDetectionPolicy(
-    block_emails=False,
-    block_phones=True,
-    block_ssn=True,
-    custom_patterns={'account_id': r'ACC-\\d{8}'}
+    threshold=0.7,  # Confidence threshold (0.0-1.0)
+    entities=["PERSON", "SSN", "CREDIT_CARD", "EMAIL_ADDRESS"],
+    block_high_confidence=True
 )
 ```
 

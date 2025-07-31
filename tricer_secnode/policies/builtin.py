@@ -10,6 +10,12 @@ import re
 from typing import Any, Dict, List, Optional, Set, Union
 from tricer_secnode.policies.core import BasePolicy, PolicyDecision
 
+try:
+    from presidio_analyzer import AnalyzerEngine
+    PRESIDIO_AVAILABLE = True
+except ImportError:
+    PRESIDIO_AVAILABLE = False
+
 
 class PromptInjectionPolicy(BasePolicy):
     """
@@ -276,74 +282,62 @@ class ToolCallWhitelistPolicy(BasePolicy):
 
 class PIIDetectionPolicy(BasePolicy):
     """
-    Detects and blocks potential personally identifiable information (PII).
+    Detects and blocks potential personally identifiable information (PII) using Presidio.
     
-    This policy scans content for common PII patterns including:
+    This policy uses Microsoft Presidio for lightweight PII detection without downloading
+    additional models. It scans content for common PII entities including:
+    - Person names
     - Social Security Numbers
     - Credit card numbers  
     - Email addresses
     - Phone numbers
-    - Custom patterns for specific PII types
+    - IP addresses
+    - And more supported by Presidio's built-in recognizers
     
     Example:
         policy = PIIDetectionPolicy(
-            block_emails=False,  # Allow emails
-            block_phones=True,   # Block phone numbers
-            custom_patterns={'account_id': r'ACC-\d{8}'}
+            threshold=0.7,  # Confidence threshold (0.0-1.0)
+            entities=["PERSON", "SSN", "CREDIT_CARD", "EMAIL"],
+            block_high_confidence=True
         )
     """
     
-    # Common PII patterns
-    PII_PATTERNS = {
-        "ssn": r"\b\d{3}-\d{2}-\d{4}\b",
-        "credit_card": r"\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b",
-        "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
-        "phone": r"\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b",
-        "ip_address": r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b",
-    }
-    
     def __init__(
         self,
-        block_emails: bool = True,
-        block_phones: bool = True,
-        block_ssn: bool = True,
-        block_credit_cards: bool = True,
-        block_ip_addresses: bool = False,
-        custom_patterns: Optional[Dict[str, str]] = None,
+        threshold: float = 0.6,
+        entities: Optional[List[str]] = None,
+        block_high_confidence: bool = True,
+        require_approval_medium: bool = True,
         **kwargs: Any
     ):
         super().__init__(**kwargs)
         
-        # Configure which PII types to check
-        self.active_patterns = {}
+        if not PRESIDIO_AVAILABLE:
+            raise ImportError(
+                "presidio-analyzer is required for PIIDetectionPolicy. "
+                "Install it with: pip install presidio-analyzer"
+            )
         
-        if block_ssn:
-            self.active_patterns["ssn"] = self.PII_PATTERNS["ssn"]
-        if block_credit_cards:
-            self.active_patterns["credit_card"] = self.PII_PATTERNS["credit_card"]
-        if block_emails:
-            self.active_patterns["email"] = self.PII_PATTERNS["email"]
-        if block_phones:
-            self.active_patterns["phone"] = self.PII_PATTERNS["phone"]
-        if block_ip_addresses:
-            self.active_patterns["ip_address"] = self.PII_PATTERNS["ip_address"]
+        self.threshold = max(0.0, min(1.0, threshold))
+        self.block_high_confidence = block_high_confidence
+        self.require_approval_medium = require_approval_medium
         
-        # Add custom patterns
-        if custom_patterns:
-            self.active_patterns.update(custom_patterns)
+        # Default entities to detect if none specified
+        self.entities = entities or [
+            "PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER", "SSN", 
+            "CREDIT_CARD", "IBAN_CODE", "IP_ADDRESS", "LOCATION"
+        ]
         
-        # Compile patterns for efficiency
-        self.compiled_patterns = {
-            name: re.compile(pattern, re.IGNORECASE)
-            for name, pattern in self.active_patterns.items()
-        }
+        # Initialize Presidio analyzer with minimal configuration
+        # This uses only built-in recognizers without additional models
+        self.analyzer = AnalyzerEngine()
     
     def check(self, state: Dict[str, Any]) -> PolicyDecision:
         """
-        Scan state content for PII patterns.
+        Scan state content for PII using Presidio analyzer.
         
         Examines messages, inputs, and other text fields for
-        personally identifiable information.
+        personally identifiable information using ML-based detection.
         """
         content_to_check = []
         
@@ -359,54 +353,110 @@ class PIIDetectionPolicy(BasePolicy):
             if field in state:
                 content_to_check.append(str(state[field]))
         
-        # Check for PII patterns
-        detected_pii = []
+        # Analyze content with Presidio
+        all_results = []
         
         for content in content_to_check:
-            if not isinstance(content, str):
+            if not isinstance(content, str) or not content.strip():
                 continue
+            
+            try:
+                # Analyze text for PII entities
+                results = self.analyzer.analyze(
+                    text=content,
+                    entities=self.entities,
+                    language='en'  # English only for lightweight version
+                )
                 
-            for pii_type, pattern in self.compiled_patterns.items():
-                matches = pattern.findall(content)
-                if matches:
-                    detected_pii.append({
-                        "type": pii_type,
-                        "matches": len(matches),
-                        "examples": matches[:3],  # Limit examples for security
-                    })
+                # Filter results by confidence threshold
+                filtered_results = [
+                    result for result in results 
+                    if result.score >= self.threshold
+                ]
+                
+                all_results.extend(filtered_results)
+                
+            except Exception as e:
+                # Fallback gracefully if Presidio fails
+                return PolicyDecision(
+                    decision="ALLOW",
+                    reason=f"PII analysis failed: {str(e)}",
+                    score=0.0,
+                    policy_name=self.name,
+                    metadata={"error": str(e), "fallback": True}
+                )
         
-        if not detected_pii:
+        if not all_results:
             return PolicyDecision(
                 decision="ALLOW",
-                reason="No PII detected",
+                reason="No PII detected by Presidio",
                 score=0.0,
                 policy_name=self.name,
-                metadata={"pii_types_checked": list(self.active_patterns.keys())}
+                metadata={
+                    "entities_checked": self.entities,
+                    "threshold": self.threshold
+                }
             )
         
-        # Calculate risk based on PII types and quantities
-        risk_score = 0.0
-        total_matches = sum(pii["matches"] for pii in detected_pii)
+        # Group results by entity type
+        detected_entities = {}
+        max_confidence = 0.0
+        total_detections = len(all_results)
         
-        # Base risk calculation
-        risk_score = min(0.9, total_matches * 0.3)
+        for result in all_results:
+            entity_type = result.entity_type
+            confidence = result.score
+            max_confidence = max(max_confidence, confidence)
+            
+            if entity_type not in detected_entities:
+                detected_entities[entity_type] = {
+                    "count": 0,
+                    "max_confidence": 0.0,
+                    "avg_confidence": 0.0,
+                    "confidences": []
+                }
+            
+            detected_entities[entity_type]["count"] += 1
+            detected_entities[entity_type]["max_confidence"] = max(
+                detected_entities[entity_type]["max_confidence"], confidence
+            )
+            detected_entities[entity_type]["confidences"].append(confidence)
         
-        # Increase risk for sensitive PII types
-        sensitive_types = {"ssn", "credit_card"}
-        for pii in detected_pii:
-            if pii["type"] in sensitive_types:
-                risk_score = min(1.0, risk_score + 0.4)
+        # Calculate average confidences
+        for entity_type in detected_entities:
+            confidences = detected_entities[entity_type]["confidences"]
+            detected_entities[entity_type]["avg_confidence"] = sum(confidences) / len(confidences)
         
-        # Decision based on risk
-        if risk_score >= 0.8:
-            decision = "DENY"
-            reason = f"High-risk PII detected: {[p['type'] for p in detected_pii]}"
-        elif risk_score >= 0.4:
+        # Calculate overall risk score
+        risk_score = min(1.0, max_confidence * 1.2)  # Boost max confidence slightly
+        
+        # Increase risk for sensitive entity types
+        sensitive_entities = {"SSN", "CREDIT_CARD", "IBAN_CODE"}
+        for entity_type in detected_entities:
+            if entity_type in sensitive_entities:
+                risk_score = min(1.0, risk_score + 0.2)
+        
+        # Decision logic based on confidence and entity types
+        high_confidence_threshold = 0.8
+        medium_confidence_threshold = 0.5
+        
+        has_high_confidence = max_confidence >= high_confidence_threshold
+        has_medium_confidence = max_confidence >= medium_confidence_threshold
+        has_sensitive_entities = bool(set(detected_entities.keys()) & sensitive_entities)
+        
+        if has_high_confidence or has_sensitive_entities:
+            if self.block_high_confidence:
+                decision = "DENY"
+                reason = f"High-confidence PII detected: {list(detected_entities.keys())}"
+            else:
+                decision = "REQUIRE_HUMAN_APPROVAL"
+                reason = f"High-confidence PII requires approval: {list(detected_entities.keys())}"
+        elif has_medium_confidence and self.require_approval_medium:
             decision = "REQUIRE_HUMAN_APPROVAL"
-            reason = f"PII detected requiring review: {[p['type'] for p in detected_pii]}"
+            reason = f"Medium-confidence PII requires review: {list(detected_entities.keys())}"
         else:
             decision = "ALLOW"
-            reason = f"Low-risk PII detected: {[p['type'] for p in detected_pii]}"
+            reason = f"Low-confidence PII detected: {list(detected_entities.keys())}"
         
         return PolicyDecision(
             decision=decision,
@@ -414,8 +464,11 @@ class PIIDetectionPolicy(BasePolicy):
             score=risk_score,
             policy_name=self.name,
             metadata={
-                "detected_pii": detected_pii,
-                "total_matches": total_matches,
+                "detected_entities": detected_entities,
+                "total_detections": total_detections,
+                "max_confidence": max_confidence,
+                "threshold": self.threshold,
+                "presidio_version": "lightweight",
             }
         )
 
