@@ -15,6 +15,7 @@ from secnode.policies.core import BasePolicy, PolicyDecision
 
 # Core dependencies - always available
 from presidio_analyzer import AnalyzerEngine
+from presidio_analyzer.recognizer_registry import RecognizerRegistry
 import validators
 from limits import RateLimitItem, parse
 from limits.storage import MemoryStorage
@@ -310,21 +311,34 @@ class PIIDetectionPolicy(BasePolicy):
     """
     Detects and blocks potential personally identifiable information (PII) using Presidio.
     
-    This policy uses Microsoft Presidio for lightweight PII detection without downloading
-    additional models. It scans content for common PII entities including:
-    - Person names
+    This policy uses Microsoft Presidio for PII detection with configurable modes:
+    
+    Normal mode (default): Uses Presidio with spaCy NLP models for comprehensive detection
+    Lightweight mode: Uses only rule-based recognizers without downloading ML models
+    
+    Supported PII entities include:
+    - Person names (requires NLP model)
     - Social Security Numbers
     - Credit card numbers  
     - Email addresses
     - Phone numbers
     - IP addresses
-    - And more supported by Presidio's built-in recognizers
+    - IBAN codes
+    - And more supported by Presidio's recognizers
     
-    Example:
+    Examples:
+        # Standard mode with ML models
         policy = PIIDetectionPolicy(
-            threshold=0.7,  # Confidence threshold (0.0-1.0)
+            threshold=0.7,
             entities=["PERSON", "SSN", "CREDIT_CARD", "EMAIL"],
             block_high_confidence=True
+        )
+        
+        # Lightweight mode without ML models
+        policy = PIIDetectionPolicy(
+            threshold=0.8,
+            entities=["EMAIL_ADDRESS", "SSN", "CREDIT_CARD"],
+            lightweight_mode=True  # No model download required
         )
     """
     
@@ -334,6 +348,7 @@ class PIIDetectionPolicy(BasePolicy):
         entities: Optional[List[str]] = None,
         block_high_confidence: bool = True,
         require_approval_medium: bool = True,
+        lightweight_mode: bool = False,
         **kwargs: Any
     ):
         super().__init__(**kwargs)
@@ -342,6 +357,7 @@ class PIIDetectionPolicy(BasePolicy):
         self.threshold = max(0.0, min(1.0, threshold))
         self.block_high_confidence = block_high_confidence
         self.require_approval_medium = require_approval_medium
+        self.lightweight_mode = lightweight_mode
         
         # Default entities to detect if none specified
         self.entities = entities or [
@@ -349,9 +365,51 @@ class PIIDetectionPolicy(BasePolicy):
             "CREDIT_CARD", "IBAN_CODE", "IP_ADDRESS", "LOCATION"
         ]
         
-        # Initialize Presidio analyzer with minimal configuration
-        # This uses only built-in recognizers without additional models
-        self.analyzer = AnalyzerEngine()
+        # Initialize Presidio analyzer based on mode
+        if self.lightweight_mode:
+            self.analyzer = self._create_lightweight_analyzer()
+        else:
+            # Initialize Presidio analyzer with default configuration
+            self.analyzer = AnalyzerEngine()
+    
+    def _create_lightweight_analyzer(self) -> "AnalyzerEngine":
+        """
+        Create a lightweight Presidio analyzer using only rule-based recognizers.
+        
+        This configuration avoids downloading large NLP models by using only
+        pattern-based and regex-based recognizers that don't require ML models.
+        Suitable for production deployments with limited resources.
+        
+        Returns:
+            AnalyzerEngine configured with rule-based recognizers only
+        """
+        from presidio_analyzer.predefined_recognizers import (
+            EmailRecognizer, CreditCardRecognizer, PhoneRecognizer,
+            IpRecognizer, UsSsnRecognizer, IbanRecognizer
+        )
+        
+        # Create empty registry for rule-based recognizers
+        registry = RecognizerRegistry()
+        
+        # Add rule-based recognizers that don't need NLP models
+        rule_based_recognizers = [
+            EmailRecognizer(),
+            CreditCardRecognizer(),
+            PhoneRecognizer(),
+            IpRecognizer(),
+            UsSsnRecognizer(),
+            IbanRecognizer(),
+        ]
+        
+        for recognizer in rule_based_recognizers:
+            registry.add_recognizer(recognizer)
+        
+        # Create analyzer without NLP engine dependencies
+        return AnalyzerEngine(
+            registry=registry,
+            nlp_engine=None,  # No NLP engine needed
+            supported_languages=["en"]
+        )
     
     def check(self, state: Dict[str, Any]) -> PolicyDecision:
         """
