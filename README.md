@@ -19,13 +19,20 @@ SecNode is a comprehensive security framework for AI applications, from simple w
 ### Installation
 
 ```bash
+# Simple installation - everything included
 pip install secnode
 ```
+
+SecNode includes professional security libraries out of the box:
+- **detect-secrets**: Enterprise-grade secret detection
+- **validators**: Professional URL validation 
+- **presidio-analyzer**: Advanced PII detection
+- **limits**: Professional rate limiting
 
 ### Basic Usage
 
 ```python
-from tricer_secnode import GuardNode, PromptInjectionPolicy, ToolCallWhitelistPolicy, AllOf
+from secnode import GuardNode, PromptInjectionPolicy, ToolCallWhitelistPolicy, AllOf
 
 # Create a comprehensive security policy
 security_policy = AllOf([
@@ -52,7 +59,7 @@ def security_check(state):
 
 ```python
 from langgraph.graph import StateGraph
-from tricer_secnode import TricerSecurityState, GuardNode, WrapperNode
+from secnode import TricerSecurityState, GuardNode, WrapperNode
 
 # Define your state with security
 class AgentState(TricerSecurityState):
@@ -80,7 +87,7 @@ app = workflow.compile()
 
 ### Prompt Injection Protection
 ```python
-from tricer_secnode import PromptInjectionPolicy
+from secnode import PromptInjectionPolicy
 
 policy = PromptInjectionPolicy(
     sensitivity=0.8,  # 0.0 = permissive, 1.0 = strict
@@ -90,7 +97,7 @@ policy = PromptInjectionPolicy(
 
 ### Tool Call Whitelisting
 ```python
-from tricer_secnode import ToolCallWhitelistPolicy
+from secnode import ToolCallWhitelistPolicy
 
 policy = ToolCallWhitelistPolicy(
     allowed_tools=['search', 'calculator', 'weather'],
@@ -100,7 +107,7 @@ policy = ToolCallWhitelistPolicy(
 
 ### PII Detection
 ```python
-from tricer_secnode import PIIDetectionPolicy
+from secnode import PIIDetectionPolicy
 
 policy = PIIDetectionPolicy(
     threshold=0.7,  # Confidence threshold (0.0-1.0)
@@ -111,7 +118,7 @@ policy = PIIDetectionPolicy(
 
 ### Code Execution Control
 ```python
-from tricer_secnode import CodeExecutionPolicy
+from secnode import CodeExecutionPolicy
 
 policy = CodeExecutionPolicy(
     allowed_languages=['python'],
@@ -120,11 +127,82 @@ policy = CodeExecutionPolicy(
 )
 ```
 
+### Confidential Data Detection
+```python
+from secnode import ConfidentialDataPolicy
+
+# Professional secret detection with detect-secrets
+policy = ConfidentialDataPolicy(
+    sensitivity_markers=["CONFIDENTIAL", "SECRET", "INTERNAL"],
+    secret_confidence_threshold=0.7,
+    strict_mode=False
+)
+```
+
+### Rate Limiting
+```python
+from secnode import RateLimitPolicy
+
+# Professional rate limiting with limits library
+policy = RateLimitPolicy(
+    limits=["20/minute", "200/hour", "5/second"],
+    strategy="moving-window",  # Professional algorithms
+    storage_uri=None  # Use "redis://..." for Redis backend
+)
+```
+
+### Content Length Control
+```python
+from secnode import ContentLengthPolicy
+
+policy = ContentLengthPolicy(
+    max_message_length=10000,
+    max_total_length=100000,
+    max_messages=500
+)
+```
+
+### URL Blacklist
+```python
+from secnode import URLBlacklistPolicy
+
+# Professional URL validation with validators library
+policy = URLBlacklistPolicy(
+    blocked_domains=["malicious.com", "spam-site.net"],
+    block_ip_urls=True,
+    block_short_urls=False
+)
+```
+
+### Keyword Filtering
+```python
+from secnode import KeywordFilterPolicy
+
+# Simple but effective content filtering
+policy = KeywordFilterPolicy(
+    use_profanity_filter=True,  # Basic profanity detection
+    custom_keywords={"high": ["malware", "virus"], "medium": ["spam"]},
+    profanity_threshold=0.7,
+    case_sensitive=False
+)
+```
+
+### Data Leakage Prevention
+```python
+from secnode import DataLeakagePolicy
+
+policy = DataLeakagePolicy(
+    check_system_paths=True,
+    check_internal_ips=True,
+    sensitivity_threshold=0.4
+)
+```
+
 ## 🔧 Advanced Usage
 
 ### Policy Composition
 ```python
-from tricer_secnode import AllOf, AnyOf
+from secnode import AllOf, AnyOf
 
 # All policies must pass
 strict_policy = AllOf([
@@ -142,7 +220,7 @@ permissive_policy = AnyOf([
 
 ### Node Wrapping
 ```python
-from tricer_secnode import WrapperNode
+from secnode import WrapperNode
 
 # Wrap any existing function with security
 secure_search = WrapperNode.wrap(
@@ -154,7 +232,7 @@ secure_search = WrapperNode.wrap(
 
 ### Cloud Integration
 ```python
-from tricer_secnode import CloudSyncer
+from secnode import CloudSyncer
 
 # Enable enterprise features
 cloud_syncer = CloudSyncer(
@@ -175,7 +253,7 @@ guard = GuardNode(
 SecNode uses `TricerSecurityState` to maintain security context across agent execution:
 
 ```python
-from tricer_secnode import TricerSecurityState, create_security_state
+from secnode import TricerSecurityState, create_security_state
 
 # Create a new security state
 state = create_security_state()
@@ -221,7 +299,7 @@ print(decision.metadata)  # Additional policy-specific data
 
 ### Custom Policies
 ```python
-from tricer_secnode import BasePolicy, PolicyDecision
+from secnode import BasePolicy, PolicyDecision
 
 class CustomSecurityPolicy(BasePolicy):
     def check(self, state):

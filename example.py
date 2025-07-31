@@ -13,7 +13,7 @@ from typing import TypedDict, List, Dict, Any
 from langgraph.graph import StateGraph, END
 
 # Import SecNode components
-from tricer_secnode import (
+from secnode import (
     TricerSecurityState,
     GuardNode,
     WrapperNode,

@@ -6,8 +6,8 @@ for SecNode. Policies are the heart of SecNode's security engine, providing
 configurable, composable security checks for AI agents.
 """
 
-from tricer_secnode.policies.core import BasePolicy, PolicyDecision, AllOf, AnyOf
-from tricer_secnode.policies.builtin import (
+from secnode.policies.core import BasePolicy, PolicyDecision, AllOf, AnyOf
+from secnode.policies.builtin import (
     PromptInjectionPolicy,
     ToolCallWhitelistPolicy,
     PIIDetectionPolicy,

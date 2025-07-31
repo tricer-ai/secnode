@@ -10,9 +10,9 @@ like LangGraph while remaining framework-agnostic.
 import asyncio
 from datetime import datetime
 from typing import Any, Callable, Dict, Optional, Union
-from tricer_secnode.policies.core import BasePolicy, PolicyDecision
-from tricer_secnode.state import TricerSecurityState, SecurityEvent, update_security_state
-from tricer_secnode.cloud import CloudSyncer
+from secnode.policies.core import BasePolicy, PolicyDecision
+from secnode.state import TricerSecurityState, SecurityEvent, update_security_state
+from secnode.cloud import CloudSyncer
 
 
 class GuardNode:

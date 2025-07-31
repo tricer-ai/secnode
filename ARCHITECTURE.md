@@ -11,7 +11,7 @@ Traditional security policies are static and require manual tuning. As AI agents
 
 ### The SecNode Solution: Adaptive Policy Engine
 ```python
-from tricer_secnode.adaptive import AdaptivePolicyEngine
+from secnode.adaptive import AdaptivePolicyEngine
 
 # Future feature - adaptive policy learning
 adaptive_engine = AdaptivePolicyEngine(
@@ -56,7 +56,7 @@ secnode/
 ├── LICENSE                          # MIT License
 ├── CHANGELOG.md                     # Version history
 │
-├── tricer_secnode/                  # ✅ Main package
+├── secnode/                         # ✅ Main package
 │   ├── __init__.py                  # ✅ Package exports
 │   ├── state.py                     # ✅ Security state management
 │   ├── cloud.py                     # ✅ Cloud integration

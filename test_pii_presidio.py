@@ -10,7 +10,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 try:
-    from tricer_secnode.policies.builtin import PIIDetectionPolicy
+    from secnode.policies.builtin import PIIDetectionPolicy
     print("✅ Successfully imported PIIDetectionPolicy")
     
     # Test 1: Initialize the policy

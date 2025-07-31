@@ -12,16 +12,16 @@ Core Components:
 - Cloud sync capabilities for enterprise features
 """
 
-from tricer_secnode.state import TricerSecurityState
-from tricer_secnode.policies.core import BasePolicy, PolicyDecision, AllOf, AnyOf
-from tricer_secnode.policies.builtin import (
+from secnode.state import TricerSecurityState
+from secnode.policies.core import BasePolicy, PolicyDecision, AllOf, AnyOf
+from secnode.policies.builtin import (
     PromptInjectionPolicy,
     ToolCallWhitelistPolicy,
     PIIDetectionPolicy,
     CodeExecutionPolicy,
 )
-from tricer_secnode.graph import GuardNode, WrapperNode
-from tricer_secnode.cloud import CloudSyncer
+from secnode.graph import GuardNode, WrapperNode
+from secnode.cloud import CloudSyncer
 
 __version__ = "0.1.0"
 __author__ = "Tricer.ai"

@@ -7,7 +7,7 @@ name = "secnode"
 version = "0.1.0"
 description = "Tricer SecNode: The Native Security Layer for AI Agents"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "MIT"
 authors = [
     {name = "Tricer.ai", email = "hello@tricer.ai"},
 ]
@@ -35,6 +35,9 @@ dependencies = [
     "typing-extensions>=4.5.0",
     "asyncio-compat>=0.1.0",
     "presidio-analyzer>=2.2.0",
+    "detect-secrets>=1.4.0",
+    "validators>=0.20.0", 
+    "limits>=3.3.0",
 ]
 
 [project.optional-dependencies]
@@ -65,7 +68,7 @@ Repository = "https://github.com/tricer-ai/secnode"
 Changelog = "https://github.com/tricer-ai/secnode/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
-packages = ["tricer_secnode"]
+packages = ["secnode"]
 
 [tool.black]
 line-length = 88
@@ -89,7 +92,7 @@ extend-exclude = '''
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["tricer_secnode"]
+known_first_party = ["secnode"]
 
 [tool.mypy]
 python_version = "3.9"
