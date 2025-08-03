@@ -1356,7 +1356,7 @@ class RateLimitPolicy(BasePolicy):
             )
         
         # Calculate risk score based on violations
-        risk_score = min(1.0, len(violations) * 0.4)
+        risk_score = min(1.0, len(violations) * 0.5)
         
         violation_details = []
         for violation in violations:
@@ -1787,7 +1787,10 @@ class KeywordFilterPolicy(BasePolicy):
         detected_words = []
         
         for word in profanity_words:
-            if word in text_lower:
+            # Use word boundaries to avoid false positives like "hello" containing "hell"
+            import re
+            pattern = r'\b' + re.escape(word) + r'\b'
+            if re.search(pattern, text_lower):
                 detected_words.append(word)
         
         if detected_words:

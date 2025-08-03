@@ -7,7 +7,7 @@ classes enable seamless security enforcement in graph-based architectures
 like LangGraph while remaining framework-agnostic.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Optional, Union
 from secnode.policies.core import BasePolicy, PolicyDecision
 from secnode.state import TricerSecurityState, SecurityEvent, update_security_state
@@ -91,7 +91,7 @@ class GuardNode:
             
             # Create security event for audit log
             event = SecurityEvent(
-                timestamp=datetime.utcnow().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 event_type="policy_check",
                 policy_name=self.policy.name,
                 decision=decision.decision,
@@ -107,7 +107,7 @@ class GuardNode:
             if isinstance(state, dict) and any(
                 key in state for key in ["audit_log", "last_sec_decision"]
             ):
-                update_security_state(state, event, decision.dict())
+                update_security_state(state, event, decision.model_dump())
             
             return decision
             
@@ -125,7 +125,7 @@ class GuardNode:
             
             # Log error event
             error_event = SecurityEvent(
-                timestamp=datetime.utcnow().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 event_type="policy_error", 
                 policy_name=self.policy.name,
                 decision=error_decision.decision,
@@ -136,7 +136,7 @@ class GuardNode:
             if isinstance(state, dict) and any(
                 key in state for key in ["audit_log", "last_sec_decision"]
             ):
-                update_security_state(state, error_event, error_decision.dict())
+                update_security_state(state, error_event, error_decision.model_dump())
             
             return error_decision
     
@@ -227,7 +227,7 @@ class WrapperNode:
                 else:
                     return {
                         "error": f"Access denied by security policy: {decision.reason}",
-                        "security_decision": decision.dict(),
+                        "security_decision": decision.model_dump(),
                         **state
                     }
             
@@ -239,7 +239,7 @@ class WrapperNode:
                     return {
                         "status": "pending_approval",
                         "approval_reason": decision.reason,
-                        "security_decision": decision.dict(),
+                        "security_decision": decision.model_dump(),
                         **state
                     }
             
@@ -249,14 +249,14 @@ class WrapperNode:
                 
                 # Add security metadata to result if it's a dict
                 if isinstance(result, dict):
-                    result["security_decision"] = decision.dict()
+                    result["security_decision"] = decision
                 
                 return result
                 
             except Exception as e:
                 # Log execution error
                 error_event = SecurityEvent(
-                    timestamp=datetime.utcnow().isoformat(),
+                    timestamp=datetime.now(timezone.utc).isoformat(),
                     event_type="node_execution_error",
                     policy_name=policy.name,
                     decision="ERROR",
