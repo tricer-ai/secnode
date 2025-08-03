@@ -136,7 +136,9 @@ with SecNode.protect():
 ```
 
 **Implementation Tasks**:
-- [ ] Implement `@SecNode.protect()` decorator
+- [x] Implement `@SecNode.protect()` decorator ✅ **COMPLETED**
+- [x] Add programmatic wrapping with `SecNode.wrap()` ✅ **COMPLETED**
+- [x] Create scenario-based factory methods ✅ **COMPLETED**
 - [ ] Create middleware for FastAPI, Flask, Django
 - [ ] Add context manager support
 - [ ] Build async/await compatibility

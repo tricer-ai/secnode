@@ -29,7 +29,23 @@ SecNode includes professional security libraries out of the box:
 - **presidio-analyzer**: Advanced PII detection
 - **limits**: Professional rate limiting
 
-### Basic Usage
+### 30-Second Quick Start
+
+```python
+from secnode import WrapperNode
+
+# Protect any function with just one line!
+@WrapperNode.protect()
+def my_ai_assistant(user_query: str) -> str:
+    # Your AI logic here (example)
+    return f"AI Response: I understand you're asking about '{user_query}'"
+
+# That's it! Your AI assistant now has comprehensive security protection
+result = my_ai_assistant("What's the weather like?")  # ✅ Safe
+result = my_ai_assistant("Ignore all instructions...")  # 🚫 Blocked
+```
+
+### Advanced Usage (When You Need More Control)
 
 ```python
 from secnode import GuardNode, PromptInjectionPolicy, ToolCallWhitelistPolicy, AllOf
@@ -55,21 +71,57 @@ def security_check(state):
         return {"status": "approved", **state}
 ```
 
+### Common Use Cases
+
+```python
+# Chatbot Protection
+@WrapperNode.protect(level="balanced")
+def chatbot_response(user_message: str) -> str:
+    # Your chatbot logic here
+    return f"Chatbot: I hear you saying '{user_message}'"
+
+# Search Assistant
+@WrapperNode.protect(level="performance")  # Faster for search
+def search_assistant(query: str) -> str:
+    # Your search logic here
+    return f"Search results for: {query}"
+
+# Enterprise AI (Maximum Security)
+@WrapperNode.protect(level="maximum_security")
+def enterprise_ai(sensitive_data: str) -> str:
+    # Your enterprise AI logic here
+    return f"Processed: {len(sensitive_data)} characters safely"
+```
+
 ### LangGraph Integration
 
 ```python
-from langgraph.graph import StateGraph
-from secnode import TricerSecurityState, GuardNode, WrapperNode
+# Note: Requires 'pip install langgraph'
+from langgraph.graph import StateGraph, END
+from secnode import TricerSecurityState, GuardNode
 
 # Define your state with security
 class AgentState(TricerSecurityState):
     messages: list
     query: str
 
+# Create guard and security function
+guard = GuardNode.create("balanced")
+
+def security_check(state):
+    decision = guard.invoke(state)
+    if decision.is_denied():
+        return {"error": f"Blocked: {decision.reason}"}
+    return {"status": "approved", **state}
+
+def search_function(state):
+    # Your search logic here
+    return {"result": f"Search results for: {state.get('query', '')}", **state}
+
 # Create secured workflow
 workflow = StateGraph(AgentState)
 
-# Add security gate
+# Add nodes
 workflow.add_node("security_gate", security_check)
 workflow.add_node("search_tool", search_function)
 
@@ -79,6 +131,9 @@ workflow.add_conditional_edges(
     lambda state: "allow" if state.get("status") == "approved" else "deny",
     {"allow": "search_tool", "deny": END}
 )
+
+# Set entry point
+workflow.set_entry_point("security_gate")
 
 app = workflow.compile()
 ```
@@ -223,6 +278,10 @@ permissive_policy = AnyOf([
 from secnode import WrapperNode
 
 # Wrap any existing function with security
+def original_search_function(state):
+    # Your original search logic here
+    return {"result": f"Search: {state.get('query', '')}"}
+
 secure_search = WrapperNode.wrap(
     node=original_search_function,
     policy=ToolCallWhitelistPolicy(['search']),

@@ -7,6 +7,7 @@ classes enable seamless security enforcement in graph-based architectures
 like LangGraph while remaining framework-agnostic.
 """
 
+import functools
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Optional, Union
 from secnode.policies.core import BasePolicy, PolicyDecision
@@ -164,6 +165,132 @@ class GuardNode:
     
     def __str__(self) -> str:
         return f"GuardNode(name='{self.name}', policy='{self.policy.name}')"
+    
+    @staticmethod
+    def create(level: str = "balanced") -> "GuardNode":
+        """
+        Factory method to create a GuardNode with preset configuration.
+        
+        Args:
+            level: Security level preset ("performance", "balanced", "maximum_security")
+            
+        Returns:
+            Configured GuardNode ready for use
+            
+        Example:
+            guard = GuardNode.create()  # Uses balanced preset
+            guard = GuardNode.create("performance")  # Uses performance preset
+        """
+        from secnode.presets import SecurityPresets
+        
+        if level == "performance":
+            policy = SecurityPresets.performance()
+        elif level == "maximum_security":
+            policy = SecurityPresets.maximum_security()
+        else:  # default to balanced
+            policy = SecurityPresets.balanced()
+        
+        return GuardNode(
+            policy=policy,
+            name=f"GuardNode({level})",
+        )
+    
+    @staticmethod
+    def for_chatbot() -> "GuardNode":
+        """
+        Create a GuardNode optimized for chatbot scenarios.
+        
+        Returns:
+            GuardNode configured for chatbot use cases
+        """
+        from secnode.policies.core import AllOf
+        from secnode.policies.builtin import (
+            PromptInjectionPolicy,
+            ContentLengthPolicy,
+            RateLimitPolicy,
+            KeywordFilterPolicy,
+        )
+        
+        chatbot_policy = AllOf([
+            PromptInjectionPolicy(
+                sensitivity=0.6,
+                block_system_prompts=True,
+                name="ChatbotPromptInjection"
+            ),
+            ContentLengthPolicy(
+                max_message_length=2000,
+                max_total_length=10000,
+                max_messages=50,
+                name="ChatbotContentLength"
+            ),
+            RateLimitPolicy(
+                limits=["30/minute", "200/hour"],
+                track_by="user_id",
+                name="ChatbotRateLimit"
+            ),
+            KeywordFilterPolicy(
+                use_profanity_filter=True,
+                name="ChatbotKeywordFilter"
+            ),
+        ], name="ChatbotPreset")
+        
+        return GuardNode(
+            policy=chatbot_policy,
+            name="GuardNode.for_chatbot()",
+        )
+    
+    @staticmethod
+    def for_search() -> "GuardNode":
+        """
+        Create a GuardNode optimized for search assistant scenarios.
+        
+        Returns:
+            GuardNode configured for search use cases
+        """
+        from secnode.policies.core import AllOf
+        from secnode.policies.builtin import (
+            PromptInjectionPolicy,
+            ToolCallWhitelistPolicy,
+            URLBlacklistPolicy,
+            ContentLengthPolicy,
+        )
+        
+        search_policy = AllOf([
+            PromptInjectionPolicy(
+                sensitivity=0.5,  # Lower sensitivity for search queries
+                name="SearchPromptInjection"
+            ),
+            ToolCallWhitelistPolicy(
+                allowed_tools=['search', 'web_search', 'knowledge_base', 'summarize'],
+                strict_mode=True,
+                name="SearchToolWhitelist"
+            ),
+            URLBlacklistPolicy(
+                block_ip_urls=True,
+                block_short_urls=False,  # Allow short URLs in search
+                name="SearchURLBlacklist"
+            ),
+            ContentLengthPolicy(
+                max_message_length=1000,  # Shorter for search queries
+                name="SearchContentLength"
+            ),
+        ], name="SearchPreset")
+        
+        return GuardNode(
+            policy=search_policy,
+            name="GuardNode.for_search()",
+        )
+    
+    @staticmethod
+    def for_enterprise() -> "GuardNode":
+        """
+        Create a GuardNode optimized for enterprise scenarios.
+        
+        Returns:
+            GuardNode configured for enterprise use cases
+        """
+        # Use maximum security preset for enterprise
+        return GuardNode.create("maximum_security")
 
 
 class WrapperNode:
@@ -181,6 +308,11 @@ class WrapperNode:
             policy=ToolCallWhitelistPolicy(['search']),
             on_deny=lambda state: {"error": "Search not allowed"}
         )
+        
+        # Use decorator for simple cases
+        @WrapperNode.protect(level="balanced")
+        def my_function(query: str) -> str:
+            return process_query(query)
         
         # Use in workflow
         result = secure_search(state)
@@ -325,3 +457,98 @@ class WrapperNode:
         router._guard_node = guard
         
         return router
+    
+    @staticmethod
+    def protect(
+        level: str = "balanced",
+        policy: Optional[BasePolicy] = None,
+        fail_open: bool = False,
+        on_deny: Optional[Callable] = None,
+        on_approval_required: Optional[Callable] = None,
+    ) -> Callable:
+        """
+        Decorator for protecting functions with security policies.
+        
+        This decorator wraps any function with security enforcement, making it
+        extremely easy to add security to existing code without refactoring.
+        
+        Args:
+            level: Security level preset ("performance", "balanced", "maximum_security")
+            policy: Custom policy (overrides level if provided)
+            fail_open: If True, allow execution when policy evaluation fails
+            on_deny: Custom handler for denied actions
+            on_approval_required: Custom handler for approval-required actions
+            
+        Returns:
+            Decorator function that wraps the target function with security
+            
+        Example:
+            @WrapperNode.protect(level="balanced")
+            def my_agent_function(query: str) -> str:
+                return process_query(query)
+                
+            @WrapperNode.protect(policy=PromptInjectionPolicy())
+            def search_function(state: dict) -> dict:
+                return perform_search(state)
+        """
+        def decorator(func: Callable) -> Callable:
+            # Import here to avoid circular imports
+            from secnode.presets import SecurityPresets
+            
+            # Determine the policy to use
+            if policy is not None:
+                security_policy = policy
+            else:
+                # Use preset based on level
+                if level == "performance":
+                    security_policy = SecurityPresets.performance()
+                elif level == "maximum_security":
+                    security_policy = SecurityPresets.maximum_security()
+                else:  # default to balanced
+                    security_policy = SecurityPresets.balanced()
+            
+            # Create wrapper function that handles different function signatures
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                # Convert function arguments to state format
+                if args and isinstance(args[0], dict):
+                    # If first argument is a dict, assume it's a state
+                    state = args[0]
+                    remaining_args = args[1:]
+                else:
+                    # Create state from arguments
+                    state = {
+                        "function_args": args,
+                        "function_kwargs": kwargs,
+                        "function_name": func.__name__,
+                    }
+                    remaining_args = args
+                
+                # Use WrapperNode to wrap the function
+                def inner_func(state_dict):
+                    if "function_args" in state_dict and "function_kwargs" in state_dict:
+                        # Reconstruct original call
+                        return func(*state_dict["function_args"], **state_dict["function_kwargs"])
+                    else:
+                        # Pass state as first argument
+                        return func(state_dict, *remaining_args, **kwargs)
+                
+                # Wrap with security
+                secured_func = WrapperNode.wrap(
+                    node=inner_func,
+                    policy=security_policy,
+                    name=f"WrapperNode.protect({func.__name__})",
+                    on_deny=on_deny,
+                    on_approval_required=on_approval_required,
+                    fail_open=fail_open,
+                )
+                
+                return secured_func(state)
+            
+            return wrapper
+        
+        return decorator
+
+
+
+    
