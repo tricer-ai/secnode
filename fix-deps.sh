@@ -30,8 +30,8 @@ from secnode.policies.builtin import PromptInjectionPolicy
 policy = PromptInjectionPolicy()
 print('✅ PromptInjectionPolicy imported and created successfully')
 
-from secnode.cloud import CloudSyncer
-print('✅ CloudSyncer imported successfully')
+# CloudSyncer has been removed in refactoring
+print('✅ Cloud functionality removed - SecNode is now lightweight')
 
 from secnode import GuardNode, WrapperNode
 print('✅ Graph components imported successfully')

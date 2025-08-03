@@ -7,12 +7,10 @@ classes enable seamless security enforcement in graph-based architectures
 like LangGraph while remaining framework-agnostic.
 """
 
-import asyncio
 from datetime import datetime
 from typing import Any, Callable, Dict, Optional, Union
 from secnode.policies.core import BasePolicy, PolicyDecision
 from secnode.state import TricerSecurityState, SecurityEvent, update_security_state
-from secnode.cloud import CloudSyncer
 
 
 class GuardNode:
@@ -29,8 +27,7 @@ class GuardNode:
             policy=AllOf([
                 PromptInjectionPolicy(),
                 ToolCallWhitelistPolicy(['search', 'calculator'])
-            ]),
-            cloud_syncer=CloudSyncer(api_key="your-key")
+            ])
         )
         
         # In a LangGraph workflow
@@ -43,7 +40,6 @@ class GuardNode:
         self,
         policy: BasePolicy,
         name: Optional[str] = None,
-        cloud_syncer: Optional[CloudSyncer] = None,
         fail_open: bool = False,
     ):
         """
@@ -52,12 +48,10 @@ class GuardNode:
         Args:
             policy: The security policy to enforce
             name: Optional name for this guard node
-            cloud_syncer: Optional cloud syncer for telemetry
             fail_open: If True, allow actions when policy evaluation fails
         """
         self.policy = policy
         self.name = name or f"GuardNode({policy.name})"
-        self.cloud_syncer = cloud_syncer
         self.fail_open = fail_open
         self._stats = {
             "total_checks": 0,
@@ -114,16 +108,6 @@ class GuardNode:
                 key in state for key in ["audit_log", "last_sec_decision"]
             ):
                 update_security_state(state, event, decision.dict())
-            
-            # Sync to cloud if configured
-            if self.cloud_syncer:
-                asyncio.create_task(
-                    self.cloud_syncer.sync_log({
-                        "event": dict(event),
-                        "decision": decision.dict(),
-                        "guard_node": self.name,
-                    })
-                )
             
             return decision
             
@@ -207,7 +191,6 @@ class WrapperNode:
         node: Callable[[Dict[str, Any]], Any],
         policy: BasePolicy,
         name: Optional[str] = None,
-        cloud_syncer: Optional[CloudSyncer] = None,
         on_deny: Optional[Callable[[Dict[str, Any]], Any]] = None,
         on_approval_required: Optional[Callable[[Dict[str, Any]], Any]] = None,
         fail_open: bool = False,
@@ -219,7 +202,6 @@ class WrapperNode:
             node: The original node/function to wrap
             policy: Security policy to enforce
             name: Optional name for the wrapper
-            cloud_syncer: Optional cloud syncer for telemetry
             on_deny: Function to call when access is denied
             on_approval_required: Function to call when approval is needed
             fail_open: If True, execute node when policy evaluation fails
@@ -230,7 +212,6 @@ class WrapperNode:
         guard = GuardNode(
             policy=policy,
             name=name or f"Wrapper({getattr(node, '__name__', 'unknown')})",
-            cloud_syncer=cloud_syncer,
             fail_open=fail_open,
         )
         
@@ -306,7 +287,6 @@ class WrapperNode:
         deny_route: str = "deny", 
         approval_route: str = "approval",
         name: Optional[str] = None,
-        cloud_syncer: Optional[CloudSyncer] = None,
     ) -> Callable[[Dict[str, Any]], str]:
         """
         Create a routing function for conditional edges in graph workflows.
@@ -321,7 +301,6 @@ class WrapperNode:
             deny_route: Route name when policy denies
             approval_route: Route name when approval is required
             name: Optional name for the router
-            cloud_syncer: Optional cloud syncer
             
         Returns:
             A routing function that returns route names
@@ -329,7 +308,6 @@ class WrapperNode:
         guard = GuardNode(
             policy=policy,
             name=name or f"Router({policy.name})",
-            cloud_syncer=cloud_syncer,
         )
         
         def router(state: Dict[str, Any]) -> str:

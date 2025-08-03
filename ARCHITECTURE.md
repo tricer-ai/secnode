@@ -174,7 +174,6 @@ guard = GuardNode(
         CustomBusinessLogicPolicy(),
         AdaptivePolicyEngine(learning_rate=0.05)
     ]),
-    cloud_syncer=CloudSyncer(custom_endpoint="https://my-enterprise.com/api"),
     fail_open=False
 )
 ```
@@ -193,8 +192,8 @@ guard = GuardNode(
 ### Phase 1: Foundation (Current)
 - ✅ Core policy framework
 - ✅ LangGraph integration
-- ✅ Basic cloud sync
 - ✅ Essential built-in policies
+- ✅ Comprehensive test suite
 
 ### Phase 2: Intelligence (6-12 months)
 - 🔄 Adaptive policy learning

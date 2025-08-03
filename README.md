@@ -230,22 +230,7 @@ secure_search = WrapperNode.wrap(
 )
 ```
 
-### Cloud Integration
-```python
-from secnode import CloudSyncer
 
-# Enable enterprise features
-cloud_syncer = CloudSyncer(
-    api_key="your-tricer-api-key",
-    enable_analytics=True,
-    enable_compliance=True
-)
-
-guard = GuardNode(
-    policy=your_policy,
-    cloud_syncer=cloud_syncer
-)
-```
 
 ## 📚 Core Concepts
 
@@ -275,25 +260,7 @@ print(decision.score)     # Risk score from 0.0 to 1.0
 print(decision.metadata)  # Additional policy-specific data
 ```
 
-## 🏢 Enterprise Features
 
-### Analytics & Monitoring
-- Real-time security event streaming
-- Policy effectiveness metrics  
-- Risk trend analysis
-- Custom dashboards
-
-### Centralized Policy Management
-- Policy versioning and rollback
-- A/B testing for security policies
-- Environment-specific configurations
-- Automated policy updates
-
-### Compliance & Reporting
-- SOC 2, GDPR, HIPAA compliance templates
-- Automated audit trails
-- Risk assessment reports
-- Incident response workflows
 
 ## 🧩 Extensibility
 
