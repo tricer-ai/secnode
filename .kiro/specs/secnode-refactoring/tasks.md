@@ -1,94 +1,94 @@
-# SecNode 项目重构实施任务
+# SecNode Project Refactoring Implementation Tasks
 
-## 任务概述
+## Task Overview
 
-本文档列出了 SecNode 项目重构的具体实施任务，按照优先级和依赖关系组织。
+This document lists the specific implementation tasks for SecNode project refactoring, organized by priority and dependencies.
 
-## 实施任务
+## Implementation Tasks
 
-- [x] 1. 删除云端功能模块
-  - 删除 `secnode/cloud.py` 文件
-  - 从 `secnode/__init__.py` 中移除 CloudSyncer 导入和导出
-  - 更新 `pyproject.toml` 移除 aiohttp 依赖
-  - _需求: 1.1, 1.2, 1.3_
+- [x] 1. Remove cloud functionality module
+  - Delete `secnode/cloud.py` file
+  - Remove CloudSyncer import and export from `secnode/__init__.py`
+  - Update `pyproject.toml` to remove aiohttp dependency
+  - _Requirements: 1.1, 1.2, 1.3_
 
-- [x] 2. 修改 GuardNode 和 WrapperNode 类
-  - 从 `secnode/graph.py` 中移除 CloudSyncer 相关代码
-  - 移除 cloud_syncer 参数和相关逻辑
-  - 简化异步日志记录逻辑
-  - _需求: 1.4_
+- [x] 2. Modify GuardNode and WrapperNode classes
+  - Remove CloudSyncer related code from `secnode/graph.py`
+  - Remove cloud_syncer parameter and related logic
+  - Simplify async logging logic
+  - _Requirements: 1.4_
 
-- [x] 3. 创建公共工具模块
-  - 创建 `secnode/utils/__init__.py`
-  - 创建 `secnode/utils/common.py` 包含公共函数
-  - 实现内容提取和风险计算的通用方法
-  - _需求: 3.1, 3.4_
+- [x] 3. Create common utility module
+  - Create `secnode/utils/__init__.py`
+  - Create `secnode/utils/common.py` containing common functions
+  - Implement common methods for content extraction and risk calculation
+  - _Requirements: 3.1, 3.4_
 
-- [x] 4. 优化策略类中的重复代码
-  - 提取 `secnode/policies/builtin.py` 中的重复内容提取逻辑
-  - 统一异常处理模式
-  - 优化风险分数计算逻辑
-  - _需求: 3.2, 3.3_
+- [x] 4. Optimize duplicate code in policy classes
+  - Extract duplicate content extraction logic from `secnode/policies/builtin.py`
+  - Unify exception handling patterns
+  - Optimize risk score calculation logic
+  - _Requirements: 3.2, 3.3_
 
-- [x] 5. 创建测试工具模块
-  - 创建 `tests/utils/__init__.py`
-  - 创建 `tests/utils/helpers.py` 包含测试工具函数
-  - 创建 `tests/utils/fixtures.py` 包含测试数据
-  - _需求: 3.1_
+- [x] 5. Create test utility module
+  - Create `tests/utils/__init__.py`
+  - Create `tests/utils/helpers.py` containing test utility functions
+  - Create `tests/utils/fixtures.py` containing test data
+  - _Requirements: 3.1_
 
-- [x] 6. 重组测试文件结构
-  - 创建 `tests/conftest.py` pytest 配置文件
-  - 创建 `tests/unit/` 目录结构
-  - 将现有测试文件迁移到新结构中
-  - _需求: 2.1, 2.2_
+- [x] 6. Reorganize test file structure
+  - Create `tests/conftest.py` pytest configuration file
+  - Create `tests/unit/` directory structure
+  - Migrate existing test files to new structure
+  - _Requirements: 2.1, 2.2_
 
-- [x] 7. 合并和优化测试代码
-  - 合并 `test_basic_policies.py` 和 `test_all_policies.py`
-  - 使用公共测试工具函数重写测试
-  - 删除重复的测试逻辑
-  - _需求: 2.3, 3.1_
+- [x] 7. Merge and optimize test code
+  - Merge `test_basic_policies.py` and `test_all_policies.py`
+  - Rewrite tests using common test utility functions
+  - Remove duplicate test logic
+  - _Requirements: 2.3, 3.1_
 
-- [x] 8. 清理根目录测试文件
-  - 删除根目录下的 `test_*.py` 文件
-  - 确保所有测试功能已迁移到新结构
-  - 验证测试覆盖率没有降低
-  - _需求: 2.3_
+- [x] 8. Clean up root directory test files
+  - Delete `test_*.py` files in root directory
+  - Ensure all test functionality has been migrated to new structure
+  - Verify test coverage has not decreased
+  - _Requirements: 2.3_
 
-- [x] 9. 更新文档和示例
-  - 更新 `README.md` 移除云端功能相关内容
-  - 更新代码示例移除 CloudSyncer 使用
-  - 更新 `ARCHITECTURE.md` 反映新的架构
-  - _需求: 1.5, 4.3_
+- [x] 9. Update documentation and examples
+  - Update `README.md` to remove cloud functionality related content
+  - Update code examples to remove CloudSyncer usage
+  - Update `ARCHITECTURE.md` to reflect new architecture
+  - _Requirements: 1.5, 4.3_
 
-- [x] 10. 验证和测试
-  - 运行所有测试确保功能正常
-  - 验证包安装和导入正常
-  - 检查向后兼容性
-  - _需求: 2.5, 4.4_
+- [x] 10. Validation and testing
+  - Run all tests to ensure functionality works properly
+  - Verify package installation and import works normally
+  - Check backward compatibility
+  - _Requirements: 2.5, 4.4_
 
-## 任务执行顺序
+## Task Execution Order
 
-### 第一阶段：云端功能删除
-- 任务 1: 删除云端功能模块
-- 任务 2: 修改 GuardNode 和 WrapperNode 类
+### Phase 1: Cloud Functionality Removal
+- Task 1: Remove cloud functionality module
+- Task 2: Modify GuardNode and WrapperNode classes
 
-### 第二阶段：代码优化
-- 任务 3: 创建公共工具模块
-- 任务 4: 优化策略类中的重复代码
+### Phase 2: Code Optimization
+- Task 3: Create common utility module
+- Task 4: Optimize duplicate code in policy classes
 
-### 第三阶段：测试重构
-- 任务 5: 创建测试工具模块
-- 任务 6: 重组测试文件结构
-- 任务 7: 合并和优化测试代码
-- 任务 8: 清理根目录测试文件
+### Phase 3: Test Refactoring
+- Task 5: Create test utility module
+- Task 6: Reorganize test file structure
+- Task 7: Merge and optimize test code
+- Task 8: Clean up root directory test files
 
-### 第四阶段：文档更新和验证
-- 任务 9: 更新文档和示例
-- 任务 10: 验证和测试
+### Phase 4: Documentation Update and Validation
+- Task 9: Update documentation and examples
+- Task 10: Validation and testing
 
-## 风险和注意事项
+## Risks and Considerations
 
-1. **向后兼容性**: 确保核心 API 保持不变
-2. **测试覆盖**: 重构过程中不能降低测试覆盖率
-3. **功能完整性**: 删除云端功能后核心安全功能必须完整
-4. **依赖管理**: 仔细检查依赖删除不会影响其他功能
+1. **Backward Compatibility**: Ensure core APIs remain unchanged
+2. **Test Coverage**: Cannot reduce test coverage during refactoring
+3. **Functional Integrity**: Core security functionality must remain intact after removing cloud features
+4. **Dependency Management**: Carefully check that dependency removal doesn't affect other functionality

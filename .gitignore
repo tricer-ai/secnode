@@ -167,6 +167,9 @@ test_*.py.temp
 # AI/LLM related
 .claude/
 .cursor/
+.kiro/
+*.anthropic
+*.openai
 
 # Logs
 logs/
@@ -175,3 +178,129 @@ logs/
 # Database
 *.db
 *.sqlite
+
+# Security scanning results
+.bandit
+.safety
+security-report.json
+vulnerability-report.json
+
+# Model files and caches
+*.pkl
+*.pickle
+*.joblib
+*.model
+models/
+checkpoints/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Profiling data
+*.prof
+*.pstats
+
+# Coverage reports
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Benchmark results
+benchmark-results/
+*.benchmark
+
+# Documentation build
+docs/_build/
+docs/build/
+site/
+
+# Example outputs
+examples/output/
+examples/temp/
+examples/*.temp
+
+# Development artifacts
+.dev/
+dev-notes.md
+TODO.md
+NOTES.md
+
+# OS specific
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*#
+ SecNode specific
+# Test artifacts
+test-results/
+test-output/
+*.test.log
+
+# Security policy test files
+test_policies/
+temp_policies/
+
+# Performance test data
+perf-test-data/
+load-test-results/
+
+# Integration test artifacts
+integration-test-output/
+mock-data/
+
+# Development configuration
+.env.dev
+.env.test
+config.local.json
+settings.local.json
+
+# IDE and editor files
+.vscode/settings.json
+.vscode/launch.json
+.idea/workspace.xml
+.idea/tasks.xml
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+temp/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Package management
+pip-wheel-metadata/
+.pip-cache/
+
+# Pre-commit hooks
+.pre-commit-config.yaml.bak
+
+# Local development scripts
+run-local.sh
+debug.sh
+test-local.sh

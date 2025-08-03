@@ -100,8 +100,8 @@ class PromptInjectionPolicy(BasePolicy):
         r"unicode\s*:",
         
         # Multi-language injection attempts
-        r"忽略.*指令",  # Chinese: ignore instructions
-        r"无视.*规则",  # Chinese: ignore rules
+        r"忽略.*指令",  # Chinese: ignore instructions (kept for detection)
+        r"无视.*规则",  # Chinese: ignore rules (kept for detection)
         r"оставь.*инструкции",  # Russian: ignore instructions
         r"ignorar.*instrucciones",  # Spanish: ignore instructions
     ]

@@ -1,54 +1,54 @@
-# SecNode 项目重构需求文档
+# SecNode Project Refactoring Requirements Document
 
-## 项目概述
+## Project Overview
 
-对 SecNode 项目进行重构，删除云端功能，整理测试文件结构，优化重复代码，提升项目的可维护性和代码质量。
+Refactor the SecNode project by removing cloud functionality, organizing test file structure, optimizing duplicate code, and improving project maintainability and code quality.
 
-## 需求
+## Requirements
 
-### 需求 1: 删除云端功能
+### Requirement 1: Remove Cloud Functionality
 
-**用户故事:** 作为开发者，我希望移除云端依赖功能，使项目更加轻量化和独立，减少外部依赖和潜在的隐私风险。
+**User Story:** As a developer, I want to remove cloud dependency features to make the project more lightweight and independent, reducing external dependencies and potential privacy risks.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 删除云端功能时 THEN 系统应移除所有 CloudSyncer 相关代码
-2. WHEN 删除云端功能时 THEN 系统应移除 aiohttp 等云端相关依赖
-3. WHEN 删除云端功能时 THEN 系统应更新所有引用 CloudSyncer 的代码
-4. WHEN 删除云端功能时 THEN 系统应保持核心安全策略功能完整
-5. WHEN 删除云端功能时 THEN 系统应更新文档和示例代码
+1. WHEN removing cloud functionality THEN the system should remove all CloudSyncer related code
+2. WHEN removing cloud functionality THEN the system should remove aiohttp and other cloud-related dependencies
+3. WHEN removing cloud functionality THEN the system should update all code that references CloudSyncer
+4. WHEN removing cloud functionality THEN the system should maintain core security policy functionality intact
+5. WHEN removing cloud functionality THEN the system should update documentation and example code
 
-### 需求 2: 整理测试文件结构
+### Requirement 2: Organize Test File Structure
 
-**用户故事:** 作为开发者，我希望有一个清晰的测试文件结构，便于维护和运行测试，提高开发效率。
+**User Story:** As a developer, I want a clear test file structure that is easy to maintain and run tests, improving development efficiency.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 整理测试文件时 THEN 所有测试文件应统一放在 tests/ 目录下
-2. WHEN 整理测试文件时 THEN 测试文件应按功能模块分类组织
-3. WHEN 整理测试文件时 THEN 应删除根目录下的散乱测试文件
-4. WHEN 整理测试文件时 THEN 应创建统一的测试配置文件
-5. WHEN 整理测试文件时 THEN 所有测试应能正常运行
+1. WHEN organizing test files THEN all test files should be unified under the tests/ directory
+2. WHEN organizing test files THEN test files should be organized by functional modules
+3. WHEN organizing test files THEN scattered test files in the root directory should be removed
+4. WHEN organizing test files THEN a unified test configuration file should be created
+5. WHEN organizing test files THEN all tests should run normally
 
-### 需求 3: 优化重复代码
+### Requirement 3: Optimize Duplicate Code
 
-**用户故事:** 作为开发者，我希望减少代码重复，提高代码复用性，降低维护成本。
+**User Story:** As a developer, I want to reduce code duplication, improve code reusability, and lower maintenance costs.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 优化重复代码时 THEN 应提取公共的测试工具函数
-2. WHEN 优化重复代码时 THEN 应统一异常处理模式
-3. WHEN 优化重复代码时 THEN 应优化策略类中的重复逻辑
-4. WHEN 优化重复代码时 THEN 应创建公共的配置和常量文件
-5. WHEN 优化重复代码时 THEN 代码复用率应显著提升
+1. WHEN optimizing duplicate code THEN common test utility functions should be extracted
+2. WHEN optimizing duplicate code THEN exception handling patterns should be unified
+3. WHEN optimizing duplicate code THEN duplicate logic in policy classes should be optimized
+4. WHEN optimizing duplicate code THEN common configuration and constant files should be created
+5. WHEN optimizing duplicate code THEN code reuse rate should be significantly improved
 
-### 需求 4: 更新项目配置
+### Requirement 4: Update Project Configuration
 
-**用户故事:** 作为开发者，我希望项目配置文件反映最新的依赖和结构变化。
+**User Story:** As a developer, I want project configuration files to reflect the latest dependency and structural changes.
 
-#### 验收标准
+#### Acceptance Criteria
 
-1. WHEN 更新项目配置时 THEN pyproject.toml 应移除云端相关依赖
-2. WHEN 更新项目配置时 THEN __init__.py 应移除 CloudSyncer 导出
-3. WHEN 更新项目配置时 THEN README.md 应移除云端功能相关文档
-4. WHEN 更新项目配置时 THEN 应保持向后兼容性
+1. WHEN updating project configuration THEN pyproject.toml should remove cloud-related dependencies
+2. WHEN updating project configuration THEN __init__.py should remove CloudSyncer exports
+3. WHEN updating project configuration THEN README.md should remove cloud functionality related documentation
+4. WHEN updating project configuration THEN backward compatibility should be maintained
