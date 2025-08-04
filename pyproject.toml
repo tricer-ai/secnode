@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "secnode"
 version = "0.1.0"
-description = "Tricer SecNode: The Native Security Layer for AI Agents"
+description = "Tricer SecNode: The Native Security Framework for AI Agents"
 readme = "README.md"
 license = "MIT"
 authors = [

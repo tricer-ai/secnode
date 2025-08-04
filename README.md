@@ -1,7 +1,5 @@
 <div align="center">
 
-![SecNode Logo](https://raw.githubusercontent.com/tricer-ai/secnode/main/docs/assets/secnode-logo.png)
-
 # SecNode
 
 [![PyPI version](https://badge.fury.io/py/secnode.svg)](https://badge.fury.io/py/secnode)
@@ -12,6 +10,11 @@
 [![Code Quality](https://img.shields.io/codacy/grade/[grade-id])](https://www.codacy.com/gh/tricer-ai/secnode)
 [![Coverage](https://codecov.io/gh/tricer-ai/secnode/branch/main/graph/badge.svg)](https://codecov.io/gh/tricer-ai/secnode)
 [![Discord](https://img.shields.io/discord/[discord-id]?color=7289da&logo=discord&logoColor=white)](https://discord.gg/tricer-ai)
+
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/282042f4-cece-43b5-8834-84618ebbb928" alt="SecNode Logo" width="400"/>
+</p>
 
 **🚀 The Native Security Layer for AI Agents**
 
@@ -63,7 +66,7 @@ result = my_ai_assistant("What's the weather like?")  # ✅ Safe
 result = my_ai_assistant("Ignore all instructions...")  # 🚫 Blocked
 ```
 
-### Advanced Usage (When You Need More Control)
+### Advanced Usage (Create your own GuardNode)
 
 ```python
 from secnode import GuardNode, PromptInjectionPolicy, ToolCallWhitelistPolicy, AllOf
