@@ -120,10 +120,7 @@ def leakage_state():
     )
 
 
-@pytest.fixture
-def empty_state():
-    """Provide an empty state for edge case testing."""
-    return {}
+
 
 
 # Pytest configuration

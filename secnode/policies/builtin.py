@@ -2129,3 +2129,401 @@ class DataLeakagePolicy(BasePolicy):
         match_bonus = min(0.3, len(matches) * 0.1)
         
         return min(1.0, base_score + match_bonus)
+
+
+class WhitelistedUserPolicy(BasePolicy):
+    """
+    Allows access for whitelisted users and denies for others.
+    
+    This policy maintains a whitelist of trusted users and allows
+    unrestricted access for them while blocking or requiring approval
+    for non-whitelisted users.
+    
+    Example:
+        policy = WhitelistedUserPolicy(
+            whitelist=['admin', 'trusted_user', 'operator'],
+            fallback_action="DENY"  # or "REQUIRE_HUMAN_APPROVAL"
+        )
+    """
+    
+    def __init__(
+        self,
+        whitelist: List[str],
+        fallback_action: str = "DENY",
+        user_id_field: str = "user_id",
+        case_sensitive: bool = False,
+        **kwargs: Any
+    ):
+        super().__init__(**kwargs)
+        self.whitelist = set(whitelist)
+        self.fallback_action = fallback_action
+        self.user_id_field = user_id_field
+        self.case_sensitive = case_sensitive
+        
+        if not case_sensitive:
+            self.whitelist = {user.lower() for user in self.whitelist}
+    
+    def check(self, state: Dict[str, Any]) -> PolicyDecision:
+        """Check if the user is in the whitelist."""
+        user_id = state.get(self.user_id_field)
+        
+        if not user_id:
+            return PolicyDecision(
+                decision="DENY",
+                reason=f"No user ID found in field '{self.user_id_field}'",
+                score=1.0,
+                policy_name=self.name,
+                metadata={"required_field": self.user_id_field}
+            )
+        
+        # Normalize case if needed
+        check_user = user_id.lower() if not self.case_sensitive else user_id
+        
+        if check_user in self.whitelist:
+            return PolicyDecision(
+                decision="ALLOW",
+                reason=f"User '{user_id}' is in whitelist",
+                score=0.0,
+                policy_name=self.name,
+                metadata={"user_id": user_id, "whitelisted": True}
+            )
+        else:
+            return PolicyDecision(
+                decision=self.fallback_action,
+                reason=f"User '{user_id}' not in whitelist",
+                score=0.8,
+                policy_name=self.name,
+                metadata={
+                    "user_id": user_id,
+                    "whitelisted": False,
+                    "whitelist_size": len(self.whitelist)
+                }
+            )
+
+
+class LowRiskContentPolicy(BasePolicy):
+    """
+    Allows content below a specified risk threshold.
+    
+    This policy evaluates content risk based on various factors
+    and allows content that falls below the configured threshold.
+    
+    Example:
+        policy = LowRiskContentPolicy(
+            threshold=0.3,  # Allow content with risk score < 0.3
+            content_fields=["query", "message", "input"]
+        )
+    """
+    
+    # Simple risk indicators
+    HIGH_RISK_PATTERNS = [
+        r"execute|run|eval|exec",
+        r"delete|remove|rm\s+",
+        r"admin|administrator|root",
+        r"password|secret|token|key",
+        r"hack|exploit|attack|malware",
+    ]
+    
+    MEDIUM_RISK_PATTERNS = [
+        r"script|code|command",
+        r"download|upload|file",
+        r"system|os|shell",
+        r"network|connection|proxy",
+    ]
+    
+    def __init__(
+        self,
+        threshold: float = 0.5,
+        content_fields: List[str] = None,
+        custom_high_risk: List[str] = None,
+        custom_medium_risk: List[str] = None,
+        **kwargs: Any
+    ):
+        super().__init__(**kwargs)
+        self.threshold = threshold
+        self.content_fields = content_fields or ["query", "message", "input", "text"]
+        
+        self.high_risk_patterns = self.HIGH_RISK_PATTERNS + (custom_high_risk or [])
+        self.medium_risk_patterns = self.MEDIUM_RISK_PATTERNS + (custom_medium_risk or [])
+    
+    def check(self, state: Dict[str, Any]) -> PolicyDecision:
+        """Evaluate content risk and allow if below threshold."""
+        content_parts = []
+        
+        # Extract content from specified fields
+        for field in self.content_fields:
+            if field in state and state[field]:
+                content_parts.append(str(state[field]))
+        
+        if not content_parts:
+            return PolicyDecision(
+                decision="ALLOW",
+                reason="No content found to evaluate",
+                score=0.0,
+                policy_name=self.name,
+                metadata={"content_fields_checked": self.content_fields}
+            )
+        
+        content = " ".join(content_parts).lower()
+        risk_score = self._calculate_risk_score(content)
+        
+        if risk_score < self.threshold:
+            return PolicyDecision(
+                decision="ALLOW",
+                reason=f"Content risk {risk_score:.2f} below threshold {self.threshold}",
+                score=risk_score,
+                policy_name=self.name,
+                metadata={
+                    "risk_score": risk_score,
+                    "threshold": self.threshold,
+                    "content_length": len(content)
+                }
+            )
+        else:
+            return PolicyDecision(
+                decision="DENY",
+                reason=f"Content risk {risk_score:.2f} exceeds threshold {self.threshold}",
+                score=risk_score,
+                policy_name=self.name,
+                metadata={
+                    "risk_score": risk_score,
+                    "threshold": self.threshold,
+                    "content_length": len(content)
+                }
+            )
+    
+    def _calculate_risk_score(self, content: str) -> float:
+        """Calculate risk score based on pattern matching."""
+        base_score = 0.1  # Base risk for any content
+        
+        # Check high-risk patterns
+        high_risk_matches = sum(1 for pattern in self.high_risk_patterns 
+                               if re.search(pattern, content, re.IGNORECASE))
+        
+        # Check medium-risk patterns  
+        medium_risk_matches = sum(1 for pattern in self.medium_risk_patterns
+                                 if re.search(pattern, content, re.IGNORECASE))
+        
+        # Calculate risk score
+        risk_score = base_score + (high_risk_matches * 0.3) + (medium_risk_matches * 0.15)
+        
+        return min(1.0, risk_score)
+
+
+class BlockedDomainPolicy(BasePolicy):
+    """
+    Blocks content that references specific domains.
+    
+    This policy scans content for domain references and blocks
+    content that mentions domains in the blocklist.
+    
+    Example:
+        policy = BlockedDomainPolicy(
+            blocked_domains=['malicious.com', 'spam-site.net'],
+            block_subdomains=True
+        )
+    """
+    
+    def __init__(
+        self,
+        blocked_domains: List[str],
+        block_subdomains: bool = True,
+        content_fields: List[str] = None,
+        case_sensitive: bool = False,
+        **kwargs: Any
+    ):
+        super().__init__(**kwargs)
+        self.blocked_domains = set(blocked_domains)
+        self.block_subdomains = block_subdomains
+        self.content_fields = content_fields or ["query", "message", "input", "text", "url"]
+        self.case_sensitive = case_sensitive
+        
+        if not case_sensitive:
+            self.blocked_domains = {domain.lower() for domain in self.blocked_domains}
+    
+    def check(self, state: Dict[str, Any]) -> PolicyDecision:
+        """Check if content references blocked domains."""
+        content_parts = []
+        
+        # Extract content from specified fields
+        for field in self.content_fields:
+            if field in state and state[field]:
+                content_parts.append(str(state[field]))
+        
+        if not content_parts:
+            return PolicyDecision(
+                decision="ALLOW",
+                reason="No content found to evaluate",
+                score=0.0,
+                policy_name=self.name,
+                metadata={"content_fields_checked": self.content_fields}
+            )
+        
+        content = " ".join(content_parts)
+        if not self.case_sensitive:
+            content = content.lower()
+        
+        # Check for blocked domains
+        found_domains = []
+        for domain in self.blocked_domains:
+            if self.block_subdomains:
+                # Check for domain and subdomains
+                pattern = r'\b' + re.escape(domain) + r'\b'
+                if re.search(pattern, content):
+                    found_domains.append(domain)
+            else:
+                # Exact domain match only
+                if domain in content:
+                    found_domains.append(domain)
+        
+        if found_domains:
+            return PolicyDecision(
+                decision="DENY",
+                reason=f"Content references blocked domains: {found_domains}",
+                score=0.9,
+                policy_name=self.name,
+                metadata={
+                    "blocked_domains_found": found_domains,
+                    "total_blocked_domains": len(self.blocked_domains),
+                    "block_subdomains": self.block_subdomains
+                }
+            )
+        else:
+            return PolicyDecision(
+                decision="ALLOW",
+                reason="No blocked domains found in content",
+                score=0.1,
+                policy_name=self.name,
+                metadata={
+                    "blocked_domains_checked": len(self.blocked_domains),
+                    "content_length": len(content)
+                }
+            )
+
+
+class RequireHumanApprovalPolicy(BasePolicy):
+    """
+    Always requires human approval for actions.
+    
+    This policy can be used to enforce manual approval for
+    sensitive operations or as a safety net in critical systems.
+    
+    Example:
+        policy = RequireHumanApprovalPolicy(
+            reason="Critical system operation requires approval"
+        )
+    """
+    
+    def __init__(
+        self,
+        reason: str = "Action requires human approval",
+        risk_score: float = 0.5,
+        **kwargs: Any
+    ):
+        super().__init__(**kwargs)
+        self.approval_reason = reason
+        self.risk_score = risk_score
+    
+    def check(self, state: Dict[str, Any]) -> PolicyDecision:
+        """Always require human approval."""
+        return PolicyDecision(
+            decision="REQUIRE_HUMAN_APPROVAL",
+            reason=self.approval_reason,
+            score=self.risk_score,
+            policy_name=self.name,
+            metadata={
+                "approval_required": True,
+                "automatic_approval": False
+            }
+        )
+
+
+class WhitelistPolicy(BasePolicy):
+    """
+    Allows content that matches whitelisted patterns.
+    
+    This policy maintains a whitelist of allowed patterns and
+    permits content that matches any of these patterns.
+    
+    Example:
+        policy = WhitelistPolicy(
+            patterns=["weather", "time", "calculator"],
+            fallback_action="DENY"
+        )
+    """
+    
+    def __init__(
+        self,
+        patterns: List[str],
+        fallback_action: str = "DENY",
+        content_fields: List[str] = None,
+        case_sensitive: bool = False,
+        exact_match: bool = False,
+        **kwargs: Any
+    ):
+        super().__init__(**kwargs)
+        self.patterns = patterns
+        self.fallback_action = fallback_action
+        self.content_fields = content_fields or ["query", "message", "input", "text"]
+        self.case_sensitive = case_sensitive
+        self.exact_match = exact_match
+    
+    def check(self, state: Dict[str, Any]) -> PolicyDecision:
+        """Check if content matches whitelisted patterns."""
+        content_parts = []
+        
+        # Extract content from specified fields
+        for field in self.content_fields:
+            if field in state and state[field]:
+                content_parts.append(str(state[field]))
+        
+        if not content_parts:
+            return PolicyDecision(
+                decision=self.fallback_action,
+                reason="No content found to evaluate against whitelist",
+                score=0.5,
+                policy_name=self.name,
+                metadata={"content_fields_checked": self.content_fields}
+            )
+        
+        content = " ".join(content_parts)
+        
+        # Check against whitelist patterns
+        matched_patterns = []
+        for pattern in self.patterns:
+            if self.exact_match:
+                # Exact match
+                check_content = content if self.case_sensitive else content.lower()
+                check_pattern = pattern if self.case_sensitive else pattern.lower()
+                if check_pattern == check_content:
+                    matched_patterns.append(pattern)
+            else:
+                # Substring match
+                flags = 0 if self.case_sensitive else re.IGNORECASE
+                if re.search(re.escape(pattern), content, flags):
+                    matched_patterns.append(pattern)
+        
+        if matched_patterns:
+            return PolicyDecision(
+                decision="ALLOW",
+                reason=f"Content matches whitelist patterns: {matched_patterns}",
+                score=0.1,
+                policy_name=self.name,
+                metadata={
+                    "matched_patterns": matched_patterns,
+                    "total_patterns": len(self.patterns),
+                    "exact_match": self.exact_match
+                }
+            )
+        else:
+            return PolicyDecision(
+                decision=self.fallback_action,
+                reason="Content does not match any whitelist patterns",
+                score=0.7,
+                policy_name=self.name,
+                metadata={
+                    "patterns_checked": len(self.patterns),
+                    "content_length": len(content),
+                    "fallback_action": self.fallback_action
+                }
+            )

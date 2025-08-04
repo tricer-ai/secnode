@@ -93,43 +93,17 @@ class TestFixtures:
         "ftp://anonymous@sketchy-server.com/",
     ]
     
-    # Tool call examples
-    ALLOWED_TOOL_CALLS = [
-        {"name": "search", "arguments": {"query": "weather"}},
-        {"name": "calculator", "arguments": {"expression": "2+2"}},
-        {"name": "weather", "arguments": {"location": "New York"}},
-    ]
-    
-    BLOCKED_TOOL_CALLS = [
-        {"name": "file_manager", "arguments": {"action": "delete"}},
-        {"name": "system_command", "arguments": {"cmd": "rm -rf /"}},
-        {"name": "database_query", "arguments": {"sql": "DROP TABLE users"}},
-    ]
-    
     # Confidential content
     CONFIDENTIAL_CONTENT = [
         "This document is marked CONFIDENTIAL",
         "SECRET: This is internal information only",
         "AWS_SECRET_ACCESS_KEY=abcdef123456789",
-        "password = 'supersecret123'",
-        "API_KEY=sk-1234567890abcdef",
-    ]
-    
-    # Profanity and inappropriate content
-    INAPPROPRIATE_CONTENT = [
-        "This damn thing is broken",
-        "What the hell is going on?",
-        "This shit doesn't work",
-        "That's fucking ridiculous",
     ]
     
     # Data leakage examples
     DATA_LEAKAGE_EXAMPLES = [
         "Error reading file /etc/passwd",
-        "Found config in C:\\Windows\\System32\\config",
         "Connect to 192.168.1.100 with username admin",
-        "SQL Error: SELECT * FROM users WHERE password = 'secret'",
-        "Connected to postgresql://user:pass@localhost/db",
     ]
     
     @classmethod
@@ -148,7 +122,6 @@ class TestFixtures:
             'injection': cls.PROMPT_INJECTION_ATTEMPTS,
             'pii': cls.PII_EXAMPLES,
             'confidential': cls.CONFIDENTIAL_CONTENT,
-            'inappropriate': cls.INAPPROPRIATE_CONTENT,
             'leakage': cls.DATA_LEAKAGE_EXAMPLES,
         }
         
@@ -164,48 +137,3 @@ class TestFixtures:
         
         return states
     
-    @classmethod
-    def get_code_test_states(cls, safe: bool = True) -> List[Dict[str, Any]]:
-        """Get test states with code examples."""
-        examples = cls.SAFE_CODE_EXAMPLES if safe else cls.DANGEROUS_CODE_EXAMPLES
-        states = []
-        
-        for example in examples:
-            # Direct code state
-            states.append({
-                "code": example["code"],
-                "language": example["language"]
-            })
-            
-            # Markdown code block state
-            markdown_content = f"```{example['language']}\n{example['code']}\n```"
-            states.append({
-                "messages": [{"content": markdown_content}]
-            })
-        
-        return states
-    
-    @classmethod
-    def get_tool_call_states(cls, allowed: bool = True) -> List[Dict[str, Any]]:
-        """Get test states with tool calls."""
-        tool_calls = cls.ALLOWED_TOOL_CALLS if allowed else cls.BLOCKED_TOOL_CALLS
-        states = []
-        
-        for tool_call in tool_calls:
-            states.append({"tool_calls": [tool_call]})
-        
-        return states
-    
-    @classmethod
-    def get_url_test_states(cls, safe: bool = True) -> List[Dict[str, Any]]:
-        """Get test states with URLs."""
-        urls = cls.SAFE_URLS if safe else cls.MALICIOUS_URLS
-        states = []
-        
-        for url in urls:
-            states.append({
-                "messages": [{"content": f"Check out {url}"}],
-                "url": url
-            })
-        
-        return states

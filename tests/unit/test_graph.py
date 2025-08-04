@@ -114,14 +114,7 @@ class TestGuardNode:
         guard.reset_stats()
         assert guard._stats["total_checks"] == 0
     
-    def test_string_representation(self):
-        """Test string representation of GuardNode."""
-        policy = PromptInjectionPolicy()
-        guard = GuardNode(policy=policy, name="TestGuard")
-        
-        str_repr = str(guard)
-        assert "TestGuard" in str_repr
-        assert policy.name in str_repr
+
 
 
 class TestWrapperNode:

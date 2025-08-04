@@ -238,3 +238,66 @@ class AnyOf(BasePolicy):
                 "highest_risk_reason": highest_risk.reason,
             }
         )
+
+
+class NotOf(BasePolicy):
+    """
+    Policy combinator that negates a child policy's decision.
+    
+    This combinator implements NOT logic - if the child policy allows
+    an action, NotOf denies it. If the child policy denies an action,
+    NotOf allows it. Approval requirements are converted to denials.
+    
+    Example:
+        policy = NotOf(BlockedDomainPolicy(['malicious.com']))
+        # Now allows malicious.com but blocks everything else
+    """
+    
+    def __init__(self, policy: BasePolicy, name: Optional[str] = None):
+        super().__init__(name=name)
+        self.policy = policy
+    
+    def check(self, state: Dict[str, Any]) -> PolicyDecision:
+        """
+        Evaluate the child policy and negate its decision.
+        
+        Converts ALLOW to DENY, DENY to ALLOW, and REQUIRE_HUMAN_APPROVAL to DENY.
+        """
+        decision = self.policy.check(state)
+        
+        if decision.is_allowed():
+            return PolicyDecision(
+                decision="DENY",
+                reason=f"NotOf policy denied - child policy allowed: {decision.reason}",
+                score=1.0 - decision.score,  # Invert risk score
+                policy_name=self.name,
+                metadata={
+                    "child_policy": decision.policy_name,
+                    "child_decision": decision.decision,
+                    "child_reason": decision.reason,
+                }
+            )
+        elif decision.is_denied():
+            return PolicyDecision(
+                decision="ALLOW",
+                reason=f"NotOf policy allowed - child policy denied: {decision.reason}",
+                score=1.0 - decision.score,  # Invert risk score
+                policy_name=self.name,
+                metadata={
+                    "child_policy": decision.policy_name,
+                    "child_decision": decision.decision,
+                    "child_reason": decision.reason,
+                }
+            )
+        else:  # requires approval - convert to deny for security
+            return PolicyDecision(
+                decision="DENY",
+                reason=f"NotOf policy denied - child policy required approval: {decision.reason}",
+                score=decision.score,  # Keep original risk score for approval cases
+                policy_name=self.name,
+                metadata={
+                    "child_policy": decision.policy_name,
+                    "child_decision": decision.decision,
+                    "child_reason": decision.reason,
+                }
+            )

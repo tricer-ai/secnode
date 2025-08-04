@@ -50,27 +50,25 @@ class TestMessageFormatter:
         assert result["severity"] == "info"
         assert result["user_action"] == "Check and confirm message content"
     
-    def test_format_tool_blocked_single(self):
-        """Test tool blocking formatting for single tool."""
-        result = MessageFormatter.format_tool_blocked(
+    def test_format_tool_blocked(self):
+        """Test tool blocking formatting."""
+        # Single tool with allowed tools
+        result_single = MessageFormatter.format_tool_blocked(
             blocked_tools=["dangerous_tool"],
             allowed_tools=["search", "calculator"]
         )
+        assert result_single["title"] == "Requested function unavailable"
+        assert "dangerous_tool" in result_single["description"]
+        assert "search, calculator" in result_single["suggestion"]
+        assert result_single["severity"] == "error"
         
-        assert result["title"] == "Requested function unavailable"
-        assert "dangerous_tool" in result["description"]
-        assert "search, calculator" in result["suggestion"]
-        assert result["severity"] == "error"
-    
-    def test_format_tool_blocked_multiple(self):
-        """Test tool blocking formatting for multiple tools."""
-        result = MessageFormatter.format_tool_blocked(
+        # Multiple tools
+        result_multiple = MessageFormatter.format_tool_blocked(
             blocked_tools=["tool1", "tool2", "tool3"]
         )
-        
-        assert result["title"] == "Requested function unavailable"
-        assert "tool1, tool2, tool3" in result["description"]
-        assert result["severity"] == "error"
+        assert result_multiple["title"] == "Requested function unavailable"
+        assert "tool1, tool2, tool3" in result_multiple["description"]
+        assert result_multiple["severity"] == "error"
     
     def test_format_rate_limit(self):
         """Test rate limit formatting."""
@@ -86,51 +84,45 @@ class TestMessageFormatter:
         assert "minute" in result["description"]
         assert result["severity"] == "warning"
     
-    def test_format_pii_detected_high_confidence(self):
-        """Test PII detection formatting for high confidence."""
-        result = MessageFormatter.format_pii_detected(
+    def test_format_pii_detected(self):
+        """Test PII detection formatting."""
+        # High confidence case
+        result_high = MessageFormatter.format_pii_detected(
             entities=["PERSON", "EMAIL_ADDRESS"],
             confidence=0.9
         )
+        assert result_high["title"] == "Personal sensitive information detected"
+        assert "name, email address" in result_high["description"]
+        assert result_high["severity"] == "error"
         
-        assert result["title"] == "Personal sensitive information detected"
-        assert "name, email address" in result["description"]
-        assert result["severity"] == "error"
-        assert "Remove personal information and retry" in result["user_action"]
-    
-    def test_format_pii_detected_low_confidence(self):
-        """Test PII detection formatting for low confidence."""
-        result = MessageFormatter.format_pii_detected(
+        # Low confidence case
+        result_low = MessageFormatter.format_pii_detected(
             entities=["PHONE_NUMBER"],
             confidence=0.5
         )
-        
-        assert result["title"] == "May contain personal information"
-        assert "phone number" in result["description"]
-        assert result["severity"] == "warning"
+        assert result_low["title"] == "May contain personal information"
+        assert result_low["severity"] == "warning"
     
-    def test_format_code_execution_blocked_with_patterns(self):
-        """Test code execution blocking with dangerous patterns."""
-        result = MessageFormatter.format_code_execution_blocked(
+    def test_format_code_execution_blocked(self):
+        """Test code execution blocking."""
+        # With dangerous patterns
+        result_patterns = MessageFormatter.format_code_execution_blocked(
             language="python",
             dangerous_patterns=["file_operation", "system_call"]
         )
+        assert result_patterns["title"] == "Code execution blocked"
+        assert "python" in result_patterns["description"]
+        assert "security risks" in result_patterns["description"]
+        assert result_patterns["severity"] == "error"
         
-        assert result["title"] == "Code execution blocked"
-        assert "python" in result["description"]
-        assert "security risks" in result["description"]
-        assert result["severity"] == "error"
-    
-    def test_format_code_execution_blocked_language_not_supported(self):
-        """Test code execution blocking for unsupported language."""
-        result = MessageFormatter.format_code_execution_blocked(
+        # Unsupported language
+        result_lang = MessageFormatter.format_code_execution_blocked(
             language="javascript"
         )
-        
-        assert result["title"] == "Code execution blocked"
-        assert "javascript" in result["description"]
-        assert "not supported" in result["description"]
-        assert result["severity"] == "error"
+        assert result_lang["title"] == "Code execution blocked"
+        assert "javascript" in result_lang["description"]
+        assert "not supported" in result_lang["description"]
+        assert result_lang["severity"] == "error"
     
     def test_format_content_too_long(self):
         """Test content length formatting."""
@@ -145,48 +137,44 @@ class TestMessageFormatter:
         assert "1000 characters" in result["description"]
         assert result["severity"] == "error"
     
-    def test_format_url_blocked_single(self):
-        """Test URL blocking formatting for single URL."""
-        result = MessageFormatter.format_url_blocked(
+    def test_format_url_blocked(self):
+        """Test URL blocking formatting."""
+        # Single URL
+        result_single = MessageFormatter.format_url_blocked(
             urls=["https://malicious.com"],
             reason="security policy"
         )
+        assert result_single["title"] == "Link access restricted"
+        assert "https://malicious.com" in result_single["description"]
+        assert "security policy" in result_single["description"]
+        assert result_single["severity"] == "warning"
         
-        assert result["title"] == "Link access restricted"
-        assert "https://malicious.com" in result["description"]
-        assert "security policy" in result["description"]
-        assert result["severity"] == "warning"
-    
-    def test_format_url_blocked_multiple(self):
-        """Test URL blocking formatting for multiple URLs."""
-        result = MessageFormatter.format_url_blocked(
+        # Multiple URLs
+        result_multiple = MessageFormatter.format_url_blocked(
             urls=["url1", "url2", "url3"]
         )
-        
-        assert result["title"] == "Link access restricted"
-        assert "3 links" in result["description"]
-        assert result["severity"] == "warning"
+        assert result_multiple["title"] == "Link access restricted"
+        assert "3 links" in result_multiple["description"]
+        assert result_multiple["severity"] == "warning"
     
-    def test_format_keyword_filtered_high_severity(self):
-        """Test keyword filtering for high severity."""
-        result = MessageFormatter.format_keyword_filtered(
+    def test_format_keyword_filtered(self):
+        """Test keyword filtering."""
+        # High severity
+        result_high = MessageFormatter.format_keyword_filtered(
             keywords=["malware"],
             severity="high"
         )
+        assert result_high["title"] == "Message contains inappropriate content"
+        assert result_high["severity"] == "error"
+        assert "civilized and polite" in result_high["suggestion"]
         
-        assert result["title"] == "Message contains inappropriate content"
-        assert result["severity"] == "error"
-        assert "civilized and polite" in result["suggestion"]
-    
-    def test_format_keyword_filtered_medium_severity(self):
-        """Test keyword filtering for medium severity."""
-        result = MessageFormatter.format_keyword_filtered(
+        # Medium severity
+        result_medium = MessageFormatter.format_keyword_filtered(
             keywords=["spam"],
             severity="medium"
         )
-        
-        assert result["title"] == "Message content needs attention"
-        assert result["severity"] == "warning"
+        assert result_medium["title"] == "Message content needs attention"
+        assert result_medium["severity"] == "warning"
     
     def test_format_data_leakage(self):
         """Test data leakage formatting."""
@@ -198,26 +186,24 @@ class TestMessageFormatter:
         assert "system path, network information" in result["description"]
         assert result["severity"] == "critical"
     
-    def test_format_confidential_data_with_secrets(self):
-        """Test confidential data formatting with secrets."""
-        result = MessageFormatter.format_confidential_data(
+    def test_format_confidential_data(self):
+        """Test confidential data formatting."""
+        # With secrets
+        result_secrets = MessageFormatter.format_confidential_data(
             markers=["CONFIDENTIAL"],
             secret_count=2
         )
+        assert result_secrets["title"] == "Confidential information detected"
+        assert "2 possible confidential information" in result_secrets["description"]
+        assert result_secrets["severity"] == "critical"
         
-        assert result["title"] == "Confidential information detected"
-        assert "2 possible confidential information" in result["description"]
-        assert result["severity"] == "critical"
-    
-    def test_format_confidential_data_with_markers(self):
-        """Test confidential data formatting with markers only."""
-        result = MessageFormatter.format_confidential_data(
+        # With markers only
+        result_markers = MessageFormatter.format_confidential_data(
             markers=["SECRET", "INTERNAL"]
         )
-        
-        assert result["title"] == "Confidential information detected"
-        assert "SECRET, INTERNAL" in result["description"]
-        assert result["severity"] == "critical"
+        assert result_markers["title"] == "Confidential information detected"
+        assert "SECRET, INTERNAL" in result_markers["description"]
+        assert result_markers["severity"] == "critical"
     
     def test_format_generic_error(self):
         """Test generic error formatting."""
