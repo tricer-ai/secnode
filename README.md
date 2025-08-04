@@ -134,79 +134,34 @@ from secnode import TricerSecurityState, GuardNode
 
 # Define your state with security
 class AgentState(TricerSecurityState):
-    messages: list
     query: str
-    user_id: str  # For user-specific policies
+    result: str
 
-# Create guard with custom policy
+# Create security gate
 guard = GuardNode.create("balanced")
 
-def security_gate(state):
-    """Security checkpoint for all agent workflows"""
+def security_check(state):
+    """Security checkpoint"""
     decision = guard.invoke(state)
-    
     if decision.is_denied():
-        return {"error": f"🚫 Security: {decision.reason}", "blocked": True}
-    elif decision.requires_approval():
-        return {"warning": f"⚠️ Requires approval: {decision.reason}", "pending": True}
-    
-    return {"status": "✅ Security passed", "approved": True, **state}
+        return {"result": f"🚫 Blocked: {decision.reason}"}
+    return state
 
 def search_agent(state):
-    """Protected search functionality"""
-    if state.get("blocked"):
-        return state  # Skip if blocked by security
-        
-    query = state.get('query', '')
-    # Your search logic here
-    return {"result": f"🔍 Search results for: {query}", **state}
+    """Your AI agent logic"""
+    return {"result": f"🔍 Search results for: {state['query']}"}
 
-def summarize_agent(state):
-    """Protected summarization"""
-    if state.get("blocked"):
-        return state
-        
-    # Your summarization logic here
-    return {"summary": "📄 Generated summary", **state}
-
-# Create secured workflow
+# Build secure workflow
 workflow = StateGraph(AgentState)
+workflow.add_node("security", security_check)
+workflow.add_node("search", search_agent)
+workflow.add_edge("security", "search")
+workflow.add_edge("search", END)
+workflow.set_entry_point("security")
 
-# Add security-aware nodes
-workflow.add_node("security_gate", security_gate)
-workflow.add_node("search_agent", search_agent)
-workflow.add_node("summarize_agent", summarize_agent)
-
-# Smart routing based on security decisions
-def route_after_security(state):
-    if state.get("blocked"):
-        return "end"
-    elif state.get("pending"):
-        return "end"  # Could route to human approval
-    else:
-        return "search_agent"
-
-workflow.add_conditional_edges(
-    "security_gate",
-    route_after_security,
-    {"search_agent": "search_agent", "end": END}
-)
-
-workflow.add_edge("search_agent", "summarize_agent")
-workflow.add_edge("summarize_agent", END)
-
-# Set entry point
-workflow.set_entry_point("security_gate")
-
-# Compile and use
+# Use secure agent
 app = workflow.compile()
-
-# Test the secure workflow
-result = app.invoke({
-    "query": "What's the weather?", 
-    "messages": [], 
-    "user_id": "user123"
-})
+result = app.invoke({"query": "What's the weather?"})
 ```
 
 ### LangChain Integration
@@ -214,43 +169,24 @@ result = app.invoke({
 Seamlessly integrate with any LangChain agent or chain:
 
 ```python
-from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.tools import Tool
 from secnode import WrapperNode
 
-# Protect individual tools
+# Protect any tool with one line
 @WrapperNode.protect(level="balanced")
-def secure_search_tool(query: str) -> str:
-    """A secured search tool"""
-    # Your search implementation
+def search_tool(query: str) -> str:
+    """Your search implementation"""
     return f"Search results for: {query}"
 
-@WrapperNode.protect(level="maximum_security")
-def secure_calculator_tool(expression: str) -> str:
-    """A secured calculator tool"""
-    # Your calculator implementation  
-    return f"Result: {eval(expression)}"  # Note: eval is normally unsafe!
+# Create secured tool
+tool = Tool(
+    name="SecureSearch",
+    description="Search securely", 
+    func=search_tool
+)
 
-# Create secured tools
-tools = [
-    Tool(
-        name="SecureSearch",
-        description="Search for information online securely",
-        func=secure_search_tool
-    ),
-    Tool(
-        name="SecureCalculator", 
-        description="Perform calculations securely",
-        func=secure_calculator_tool
-    )
-]
-
-# Use with any LangChain agent
-agent = create_openai_functions_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools)
-
-# All tool calls are now automatically secured!
-result = agent_executor.invoke({"input": "Calculate 2+2 and search for AI news"})
+# Use with any LangChain agent - all calls are now secured!
+# agent_executor = AgentExecutor(agent=agent, tools=[tool])
 ```
 
 ## 🛡️ Built-in Security Policies
@@ -284,64 +220,38 @@ policy = AllOf([
 
 
 
-### Dynamic Policy Selection (Manual Implementation)
+### Dynamic Policy Selection
 ```python
-from secnode import GuardNode, WrapperNode
+from secnode import GuardNode
 
-def get_guard_for_user(user_id: str, context: dict = None):
-    """Select security policy based on user context"""
-    if user_id in ['admin', 'superuser']:
-        return GuardNode.create("performance")  # Lower security for trusted users
+def get_security_level(user_id: str, context: dict = None):
+    """Choose security level based on user/context"""
+    if user_id == 'admin':
+        return "performance"  # Faster for trusted users
     elif context and context.get('sensitive_data'):
-        return GuardNode.create("maximum_security")  # Max security for sensitive operations
-    else:
-        return GuardNode.create("balanced")  # Default balanced level
+        return "maximum_security"  # Strict for sensitive data
+    return "balanced"  # Default
 
-def adaptive_ai_function(query: str, user_id: str, context: dict = None):
-    """AI function with adaptive security checking"""
-    # Select appropriate guard based on user and context
-    guard = get_guard_for_user(user_id, context)
-    
-    # Manual security check
-    decision = guard.invoke({"query": query, "user_id": user_id})
-    
-    if decision.is_denied():
-        return f"🚫 Access denied: {decision.reason}"
-    
-    # Execute actual processing
-    return f"✅ Processing: {query}"
-
-# Note: DynamicGuardNode (automatic policy selection) is in development
+# Use adaptive security
+guard = GuardNode.create(get_security_level(user_id, context))
+decision = guard.invoke({"query": query, "user_id": user_id})
 ```
 
-### Node Wrapping & Chaining
+### Multi-Layer Security
 ```python
-from secnode import WrapperNode, AllOf, PromptInjectionPolicy, RateLimitPolicy, ContentLengthPolicy
+from secnode import WrapperNode, AllOf, PromptInjectionPolicy, RateLimitPolicy
 
-# Wrap existing functions with security protection
-def original_search_function(state):
-    # Your original search logic here
-    return {"result": f"Search: {state.get('query', '')}"}
-
-# Method 1: Direct wrapping
-secure_search = WrapperNode.wrap(
-    node=original_search_function,
-    policy=PromptInjectionPolicy(),
-    on_deny=lambda state: {"error": "Search not allowed"}
-)
-
-# Method 2: Multi-layer security policy composition (using AllOf)
+# Combine multiple security policies
 multi_layer_policy = AllOf([
     PromptInjectionPolicy(),
-    RateLimitPolicy(limits=["100/hour"]),
-    ContentLengthPolicy(max_message_length=5000)
+    RateLimitPolicy(limits=["100/hour"])
 ])
 
 @WrapperNode.protect(policy=multi_layer_policy)
-def multi_layered_function(input_data: str):
+def secure_function(input_data: str):
     return f"Processed: {input_data}"
 
-# Note: SecurityChain class is in development, currently use AllOf for policy composition
+# All policies must pass for function to execute
 ```
 
 
@@ -378,28 +288,21 @@ guard_secure = GuardNode.create("maximum_security")
 
 ### Policy Composition
 
-**Essential Tools: AllOf, AnyOf, NotOf - Combine multiple security policies with logical operators**
+**Combine multiple security policies with logical operators**
 
 ```python
-from secnode import AllOf, AnyOf, NotOf
+from secnode import AllOf, AnyOf, PromptInjectionPolicy, PIIDetectionPolicy
 
 # All policies must pass (strictest)
 strict_policy = AllOf([
-    PromptInjectionPolicy(sensitivity=0.9),
-    ToolCallWhitelistPolicy(['safe_tool']),
-    PIIDetectionPolicy(threshold=0.8)
+    PromptInjectionPolicy(),
+    PIIDetectionPolicy()
 ])
 
-# Any policy can allow (most permissive)
+# Any policy can allow (most permissive)  
 permissive_policy = AnyOf([
-    WhitelistedUserPolicy(whitelist=['admin', 'trusted_user']),
-    LowRiskContentPolicy(threshold=0.3)
-])
-
-# Negation policies (block specific patterns)
-custom_policy = AllOf([
-    NotOf(BlockedDomainPolicy(['malicious.com'])),
-    PromptInjectionPolicy()
+    WhitelistedUserPolicy(['admin']),
+    LowRiskContentPolicy()
 ])
 ```
 
