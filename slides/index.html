@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI安全的新范式：从Guardrails到Security as a Node</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #151932 100%);
+            color: #333;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            background: white;
+            padding: 80px;
+        }
+        
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .slide.prev {
+            transform: translateX(-100%);
+        }
+        
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .nav button {
+            padding: 10px 20px;
+            border: 2px solid #0066CC;
+            background: white;
+            color: #0066CC;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .nav button:hover {
+            background: #0066CC;
+            color: white;
+        }
+        
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: #0066CC;
+            transition: width 0.5s ease;
+            z-index: 1001;
+        }
+        
+        /* Typography */
+        h1 {
+            font-size: 56px;
+            font-weight: 700;
+            color: #0066CC;
+            margin-bottom: 30px;
+            line-height: 1.2;
+        }
+        
+        h2 {
+            font-size: 42px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 25px;
+        }
+        
+        h3 {
+            font-size: 32px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        
+        p {
+            font-size: 20px;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .subtitle {
+            font-size: 24px;
+            color: #888;
+            font-weight: 300;
+        }
+        
+        /* Grid layouts */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 60px;
+            width: 100%;
+            max-width: 1400px;
+        }
+        
+        .three-columns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            width: 100%;
+            max-width: 1400px;
+        }
+        
+        /* Cards */
+        .card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .threat-card {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FFE66D 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .threat-card h4 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        /* Stats */
+        .stat-box {
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .stat-number {
+            font-size: 64px;
+            font-weight: 700;
+            color: #0066CC;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-size: 18px;
+            color: #666;
+        }
+        
+        /* Diagrams */
+        .diagram {
+            width: 100%;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+        
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 40px 0;
+        }
+        
+        .flow-node {
+            background: #0066CC;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            position: relative;
+        }
+        
+        .flow-arrow {
+            width: 60px;
+            height: 2px;
+            background: #0066CC;
+            position: relative;
+        }
+        
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid #0066CC;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        .animate-in {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Special slides */
+        .title-slide {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        
+        .title-slide h1 {
+            color: white;
+            font-size: 72px;
+            margin-bottom: 30px;
+        }
+        
+        .title-slide .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 28px;
+        }
+        
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding: 40px 0;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #0066CC;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding: 20px;
+            width: 45%;
+            margin-bottom: 40px;
+        }
+        
+        .timeline-item:nth-child(odd) {
+            margin-left: auto;
+        }
+        
+        .timeline-dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #0066CC;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 2px 10px rgba(0, 102, 204, 0.3);
+        }
+        
+        .timeline-item:nth-child(odd) .timeline-dot {
+            left: -52px;
+        }
+        
+        .timeline-item:nth-child(even) .timeline-dot {
+            right: -52px;
+        }
+        
+        /* Comparison table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 40px 0;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 20px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .comparison-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .comparison-table tr:hover {
+            background: #fafafa;
+        }
+        
+        .check {
+            color: #4CAF50;
+            font-size: 24px;
+        }
+        
+        .cross {
+            color: #f44336;
+            font-size: 24px;
+        }
+        
+        /* Code block */
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 30px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        
+        .code-comment {
+            color: #6A9955;
+        }
+        
+        .code-keyword {
+            color: #569CD6;
+        }
+        
+        .code-string {
+            color: #CE9178;
+        }
+        
+        /* Highlight box */
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .highlight-box h3 {
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        /* List styles */
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 15px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li:before {
+            content: '✓';
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 24px;
+        }
+        
+        /* Security flow animation */
+        .security-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            margin: 60px 0;
+        }
+        
+        .security-node {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .input-node {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        .guard-node {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            animation: pulse 2s infinite;
+        }
+        
+        .output-node {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+        
+        .security-arrow {
+            font-size: 36px;
+            color: #0066CC;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .slide {
+                padding: 40px;
+            }
+            
+            h1 {
+                font-size: 42px;
+            }
+            
+            h2 {
+                font-size: 32px;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .three-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress" id="progress"></div>
+    <div class="container">
+        <!-- Slide 1: Title -->
+        <div class="slide active title-slide">
+            <div>
+                <h1 class="animate-in">AI安全的新范式</h1>
+                <p class="subtitle animate-in" style="animation-delay: 0.3s;">从Guardrails到Security as a Node</p>
+                <div style="margin-top: 60px;" class="animate-in" style="animation-delay: 0.6s;">
+                    <p style="font-size: 20px; color: rgba(255, 255, 255, 0.8);">构建可信赖的AI Agent系统</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: AI的安全挑战 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2 class="animate-in">AI时代的安全挑战</h2>
+                <p class="subtitle animate-in" style="animation-delay: 0.2s;">85%的企业担心AI安全风险，但缺乏有效防护措施</p>
+                
+                <div class="three-columns" style="margin-top: 60px;">
+                    <div class="stat-box animate-in" style="animation-delay: 0.3s;">
+                        <div class="stat-number">73%</div>
+                        <div class="stat-label">企业遭受过<br>提示注入攻击</div>
+                    </div>
+                    <div class="stat-box animate-in" style="animation-delay: 0.4s;">
+                        <div class="stat-number">$4.2M</div>
+                        <div class="stat-label">AI安全事件<br>平均损失</div>
+                    </div>
+                    <div class="stat-box animate-in" style="animation-delay: 0.5s;">
+                        <div class="stat-number">92%</div>
+                        <div class="stat-label">AI应用缺乏<br>安全防护</div>
+                    </div>
+                </div>
+                
+                <div class="highlight-box animate-in" style="animation-delay: 0.6s;">
+                    <h3>核心问题</h3>
+                    <p>传统安全措施无法应对AI特有的威胁模式</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 主要威胁类型 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>AI Agent面临的五大安全威胁</h2>
+                
+                <div style="margin-top: 40px;">
+                    <div class="threat-card animate-in" style="animation-delay: 0.2s; background: linear-gradient(135deg, #f093fb, #f5576c);">
+                        <h4>1. 提示注入攻击 (Prompt Injection)</h4>
+                        <p>攻击者通过精心设计的输入，操纵AI行为，绕过安全限制</p>
+                    </div>
+                    
+                    <div class="threat-card animate-in" style="animation-delay: 0.3s; background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <h4>2. 数据泄露 (Data Leakage)</h4>
+                        <p>AI无意中暴露训练数据、系统配置或敏感信息</p>
+                    </div>
+                    
+                    <div class="threat-card animate-in" style="animation-delay: 0.4s; background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                        <h4>3. 恶意工具调用 (Malicious Tool Use)</h4>
+                        <p>AI被诱导执行危险操作，如删除文件、发送邮件等</p>
+                    </div>
+                    
+                    <div class="threat-card animate-in" style="animation-delay: 0.5s; background: linear-gradient(135deg, #fa709a, #fee140);">
+                        <h4>4. 隐私侵犯 (Privacy Violation)</h4>
+                        <p>处理或暴露PII数据，违反GDPR、HIPAA等法规</p>
+                    </div>
+                    
+                    <div class="threat-card animate-in" style="animation-delay: 0.6s; background: linear-gradient(135deg, #30cfd0, #330867);">
+                        <h4>5. 模型越狱 (Jailbreaking)</h4>
+                        <p>突破AI的道德和安全约束，生成有害内容</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Guardrails介绍 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>传统方案：LLM Guardrails</h2>
+                <p class="subtitle">在输入输出两端添加安全检查</p>
+                
+                <div class="security-flow">
+                    <div class="security-node input-node">用户输入</div>
+                    <span class="security-arrow">→</span>
+                    <div class="security-node guard-node">Guardrails<br>检查</div>
+                    <span class="security-arrow">→</span>
+                    <div class="security-node" style="background: #888;">LLM</div>
+                    <span class="security-arrow">→</span>
+                    <div class="security-node guard-node">Guardrails<br>检查</div>
+                    <span class="security-arrow">→</span>
+                    <div class="security-node output-node">输出</div>
+                </div>
+                
+                <div class="content-grid" style="margin-top: 60px;">
+                    <div class="card animate-in" style="animation-delay: 0.3s;">
+                        <h3>工作原理</h3>
+                        <ul class="feature-list">
+                            <li>输入过滤：检测恶意提示</li>
+                            <li>输出验证：过滤有害内容</li>
+                            <li>规则引擎：基于预定义规则</li>
+                            <li>同步阻塞：串行处理流程</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.4s;">
+                        <h3>主流产品</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="padding: 10px 0;"><strong>NeMo Guardrails</strong> - NVIDIA</li>
+                            <li style="padding: 10px 0;"><strong>Guardrails AI</strong> - 开源框架</li>
+                            <li style="padding: 10px 0;"><strong>Microsoft Guidance</strong> - 微软</li>
+                            <li style="padding: 10px 0;"><strong>LangKit</strong> - WhyLabs</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Guardrails的局限性 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>Guardrails的致命缺陷</h2>
+                <p class="subtitle">为什么传统方案无法满足复杂AI系统需求</p>
+                
+                <div class="content-grid" style="margin-top: 60px;">
+                    <div>
+                        <div class="card animate-in" style="animation-delay: 0.2s; border-left: 4px solid #f44336;">
+                            <h3 style="color: #f44336;">🚫 性能瓶颈</h3>
+                            <p>串行检查导致延迟累加，每层增加50-200ms</p>
+                        </div>
+                        
+                        <div class="card animate-in" style="animation-delay: 0.3s; border-left: 4px solid #ff9800;">
+                            <h3 style="color: #ff9800;">🔗 集成困难</h3>
+                            <p>需要改造整个调用链，难以适配复杂架构</p>
+                        </div>
+                        
+                        <div class="card animate-in" style="animation-delay: 0.4s; border-left: 4px solid #9c27b0;">
+                            <h3 style="color: #9c27b0;">📊 缺乏上下文</h3>
+                            <p>只看输入输出，无法理解Agent内部状态</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="card animate-in" style="animation-delay: 0.5s; border-left: 4px solid #3f51b5;">
+                            <h3 style="color: #3f51b5;">⚙️ 配置复杂</h3>
+                            <p>规则难以维护，误报率高达30%</p>
+                        </div>
+                        
+                        <div class="card animate-in" style="animation-delay: 0.6s; border-left: 4px solid #009688;">
+                            <h3 style="color: #009688;">🔄 无法适应</h3>
+                            <p>静态规则无法应对新型攻击</p>
+                        </div>
+                        
+                        <div class="card animate-in" style="animation-delay: 0.7s; border-left: 4px solid #607d8b;">
+                            <h3 style="color: #607d8b;">🎯 覆盖不全</h3>
+                            <p>只保护LLM调用，忽视工具和数据访问</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Security as a Node概念 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>革命性理念：Security as a Node</h2>
+                <p class="subtitle">将安全作为AI工作流中的独立节点</p>
+                
+                <div class="diagram animate-in" style="animation-delay: 0.3s;">
+                    <svg width="100%" height="400" viewBox="0 0 800 400">
+                        <!-- Background graph -->
+                        <rect x="50" y="50" width="700" height="300" fill="#f5f5f5" rx="10"/>
+                        
+                        <!-- Nodes -->
+                        <circle cx="150" cy="200" r="40" fill="#4CAF50" opacity="0.8"/>
+                        <text x="150" y="205" text-anchor="middle" fill="white" font-weight="600">Input</text>
+                        
+                        <!-- Security Node (highlighted) -->
+                        <circle cx="300" cy="200" r="50" fill="#f44336" class="pulse"/>
+                        <text x="300" y="205" text-anchor="middle" fill="white" font-weight="600">Security</text>
+                        
+                        <circle cx="450" cy="120" r="40" fill="#2196F3" opacity="0.8"/>
+                        <text x="450" y="125" text-anchor="middle" fill="white" font-weight="600">LLM</text>
+                        
+                        <circle cx="450" cy="280" r="40" fill="#FF9800" opacity="0.8"/>
+                        <text x="450" y="285" text-anchor="middle" fill="white" font-weight="600">Tools</text>
+                        
+                        <circle cx="600" cy="200" r="40" fill="#9C27B0" opacity="0.8"/>
+                        <text x="600" y="205" text-anchor="middle" fill="white" font-weight="600">Output</text>
+                        
+                        <!-- Arrows -->
+                        <path d="M 190 200 L 250 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <path d="M 350 180 L 410 140" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <path d="M 350 220 L 410 260" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <path d="M 490 120 L 560 180" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <path d="M 490 280 L 560 220" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- Arrow marker -->
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+                
+                <div class="three-columns" style="margin-top: 40px;">
+                    <div class="card animate-in" style="animation-delay: 0.4s;">
+                        <h3>🎯 精准控制</h3>
+                        <p>在工作流的任意位置插入安全检查，精确控制每个步骤</p>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.5s;">
+                        <h3>⚡ 并行处理</h3>
+                        <p>安全检查与业务逻辑并行执行，减少延迟</p>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.6s;">
+                        <h3>🔄 动态路由</h3>
+                        <p>根据安全决策动态调整执行路径</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: SecNode介绍 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>SecNode：原生的AI安全框架</h2>
+                <p class="subtitle">为Graph-based AI Agent量身定制</p>
+                
+                <div class="code-block animate-in" style="animation-delay: 0.3s;">
+                    <span class="code-comment"># 一行代码实现全面安全防护</span><br>
+                    <span class="code-keyword">from</span> secnode <span class="code-keyword">import</span> WrapperNode<br><br>
+                    
+                    @WrapperNode.protect(level=<span class="code-string">"balanced"</span>)<br>
+                    <span class="code-keyword">def</span> my_ai_agent(query: str) -> str:<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment"># 您的AI逻辑</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">return</span> process_query(query)<br><br>
+                    
+                    <span class="code-comment"># 自动获得10+层安全防护</span>
+                </div>
+                
+                <div class="content-grid" style="margin-top: 60px;">
+                    <div>
+                        <h3>核心特性</h3>
+                        <ul class="feature-list">
+                            <li>Graph原生设计</li>
+                            <li>策略可组合</li>
+                            <li>零配置启动</li>
+                            <li>亚毫秒延迟</li>
+                            <li>自适应学习</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3>内置防护</h3>
+                        <ul class="feature-list">
+                            <li>提示注入检测</li>
+                            <li>PII数据保护</li>
+                            <li>工具调用控制</li>
+                            <li>速率限制</li>
+                            <li>内容过滤</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: SecNode vs Guardrails -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>对比分析：为什么选择SecNode</h2>
+                
+                <table class="comparison-table animate-in" style="animation-delay: 0.3s;">
+                    <thead>
+                        <tr>
+                            <th>特性</th>
+                            <th>传统Guardrails</th>
+                            <th>SecNode</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>架构模式</strong></td>
+                            <td>串行过滤器</td>
+                            <td>图节点集成</td>
+                        </tr>
+                        <tr>
+                            <td><strong>性能开销</strong></td>
+                            <td>50-200ms/层</td>
+                            <td><10ms总延迟</td>
+                        </tr>
+                        <tr>
+                            <td><strong>配置复杂度</strong></td>
+                            <td>需要10+行配置</td>
+                            <td>1行代码启动</td>
+                        </tr>
+                        <tr>
+                            <td><strong>上下文感知</strong></td>
+                            <td><span class="cross">✗</span> 仅输入输出</td>
+                            <td><span class="check">✓</span> 完整状态跟踪</td>
+                        </tr>
+                        <tr>
+                            <td><strong>动态适应</strong></td>
+                            <td><span class="cross">✗</span> 静态规则</td>
+                            <td><span class="check">✓</span> 自适应学习</td>
+                        </tr>
+                        <tr>
+                            <td><strong>框架集成</strong></td>
+                            <td>需要改造架构</td>
+                            <td>原生支持LangGraph</td>
+                        </tr>
+                        <tr>
+                            <td><strong>误报率</strong></td>
+                            <td>~30%</td>
+                            <td><5%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="highlight-box animate-in" style="animation-delay: 0.5s;">
+                    <h3>关键优势</h3>
+                    <p>SecNode将安全检查时间减少95%，误报率降低85%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 实际案例 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>真实案例：企业级部署效果</h2>
+                
+                <div class="content-grid" style="margin-top: 60px;">
+                    <div class="card animate-in" style="animation-delay: 0.2s;">
+                        <h3>🏦 金融服务公司</h3>
+                        <p><strong>场景：</strong>客服AI助手</p>
+                        <p><strong>挑战：</strong>防止数据泄露，合规要求</p>
+                        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                            <p style="margin: 0;"><strong>结果：</strong></p>
+                            <p style="margin: 5px 0;">• 安全事件 -98%</p>
+                            <p style="margin: 5px 0;">• 响应时间 -40%</p>
+                            <p style="margin: 5px 0;">• 合规通过率 100%</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.3s;">
+                        <h3>🏥 医疗科技企业</h3>
+                        <p><strong>场景：</strong>诊断辅助系统</p>
+                        <p><strong>挑战：</strong>HIPAA合规，隐私保护</p>
+                        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                            <p style="margin: 0;"><strong>结果：</strong></p>
+                            <p style="margin: 5px 0;">• PII泄露 0次</p>
+                            <p style="margin: 5px 0;">• 处理速度 +3x</p>
+                            <p style="margin: 5px 0;">• 开发时间 -60%</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card animate-in" style="animation-delay: 0.4s; margin-top: 40px;">
+                    <h3>🛍️ 电商平台</h3>
+                    <p><strong>场景：</strong>智能购物助手，日处理100万+请求</p>
+                    <p><strong>挑战：</strong>防止提示注入，保护用户数据</p>
+                    <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                        <p style="margin: 0;"><strong>结果：</strong></p>
+                        <p style="margin: 5px 0;">• 提示注入攻击阻挡率 99.8% • 误报率从30%降至3% • 系统可用性 99.99%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: 技术架构 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>SecNode技术架构</h2>
+                <p class="subtitle">模块化、可扩展的安全框架</p>
+                
+                <div class="diagram animate-in" style="animation-delay: 0.3s;">
+                    <svg width="100%" height="450" viewBox="0 0 900 450">
+                        <!-- Application Layer -->
+                        <rect x="50" y="20" width="800" height="80" fill="#e3f2fd" rx="8"/>
+                        <text x="450" y="45" text-anchor="middle" font-weight="600" font-size="16">应用层</text>
+                        <rect x="100" y="55" width="150" height="35" fill="#2196F3" rx="5"/>
+                        <text x="175" y="77" text-anchor="middle" fill="white" font-size="14">LangGraph Agent</text>
+                        <rect x="275" y="55" width="150" height="35" fill="#2196F3" rx="5"/>
+                        <text x="350" y="77" text-anchor="middle" fill="white" font-size="14">LangChain App</text>
+                        <rect x="450" y="55" width="150" height="35" fill="#2196F3" rx="5"/>
+                        <text x="525" y="77" text-anchor="middle" fill="white" font-size="14">Custom AI</text>
+                        <rect x="625" y="55" width="150" height="35" fill="#2196F3" rx="5"/>
+                        <text x="700" y="77" text-anchor="middle" fill="white" font-size="14">API Service</text>
+                        
+                        <!-- SecNode Core -->
+                        <rect x="50" y="120" width="800" height="100" fill="#f3e5f5" rx="8"/>
+                        <text x="450" y="145" text-anchor="middle" font-weight="600" font-size="16">SecNode核心</text>
+                        <rect x="100" y="160" width="120" height="40" fill="#9C27B0" rx="5"/>
+                        <text x="160" y="185" text-anchor="middle" fill="white" font-size="14">GuardNode</text>
+                        <rect x="240" y="160" width="120" height="40" fill="#9C27B0" rx="5"/>
+                        <text x="300" y="185" text-anchor="middle" fill="white" font-size="14">WrapperNode</text>
+                        <rect x="380" y="160" width="120" height="40" fill="#9C27B0" rx="5"/>
+                        <text x="440" y="185" text-anchor="middle" fill="white" font-size="14">PolicyEngine</text>
+                        <rect x="520" y="160" width="120" height="40" fill="#9C27B0" rx="5"/>
+                        <text x="580" y="185" text-anchor="middle" fill="white" font-size="14">StateManager</text>
+                        <rect x="660" y="160" width="120" height="40" fill="#9C27B0" rx="5"/>
+                        <text x="720" y="185" text-anchor="middle" fill="white" font-size="14">CloudSync</text>
+                        
+                        <!-- Policy Layer -->
+                        <rect x="50" y="240" width="800" height="80" fill="#e8f5e9" rx="8"/>
+                        <text x="450" y="265" text-anchor="middle" font-weight="600" font-size="16">安全策略层</text>
+                        <rect x="80" y="275" width="100" height="30" fill="#4CAF50" rx="5"/>
+                        <text x="130" y="295" text-anchor="middle" fill="white" font-size="12">提示注入</text>
+                        <rect x="200" y="275" width="100" height="30" fill="#4CAF50" rx="5"/>
+                        <text x="250" y="295" text-anchor="middle" fill="white" font-size="12">PII检测</text>
+                        <rect x="320" y="275" width="100" height="30" fill="#4CAF50" rx="5"/>
+                        <text x="370" y="295" text-anchor="middle" fill="white" font-size="12">工具控制</text>
+                        <rect x="440" y="275" width="100" height="30" fill="#4CAF50" rx="5"/>
+                        <text x="490" y="295" text-anchor="middle" fill="white" font-size="12">速率限制</text>
+                        <rect x="560" y="275" width="100" height="30" fill="#4CAF50" rx="5"/>
+                        <text x="610" y="295" text-anchor="middle" fill="white" font-size="12">内容过滤</text>
+                        <rect x="680" y="275" width="100" height="30" fill="#4CAF50" rx="5"/>
+                        <text x="730" y="295" text-anchor="middle" fill="white" font-size="12">自定义策略</text>
+                        
+                        <!-- Infrastructure -->
+                        <rect x="50" y="340" width="800" height="80" fill="#fff3e0" rx="8"/>
+                        <text x="450" y="365" text-anchor="middle" font-weight="600" font-size="16">基础设施</text>
+                        <rect x="150" y="375" width="140" height="30" fill="#FF9800" rx="5"/>
+                        <text x="220" y="395" text-anchor="middle" fill="white" font-size="12">Presidio分析器</text>
+                        <rect x="310" y="375" width="140" height="30" fill="#FF9800" rx="5"/>
+                        <text x="380" y="395" text-anchor="middle" fill="white" font-size="12">Detect-Secrets</text>
+                        <rect x="470" y="375" width="140" height="30" fill="#FF9800" rx="5"/>
+                        <text x="540" y="395" text-anchor="middle" fill="white" font-size="12">Validators</text>
+                        <rect x="630" y="375" width="120" height="30" fill="#FF9800" rx="5"/>
+                        <text x="690" y="395" text-anchor="middle" fill="white" font-size="12">Limits库</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: 代码示例 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>简单到令人惊讶的集成</h2>
+                
+                <div class="content-grid" style="margin-top: 40px;">
+                    <div>
+                        <h3>基础防护（1行代码）</h3>
+                        <div class="code-block animate-in" style="animation-delay: 0.2s;">
+                            <span class="code-keyword">from</span> secnode <span class="code-keyword">import</span> WrapperNode<br><br>
+                            
+                            @WrapperNode.protect()<br>
+                            <span class="code-keyword">def</span> chatbot(msg: str):<br>
+                            &nbsp;&nbsp;<span class="code-keyword">return</span> ai_response(msg)<br><br>
+                            
+                            <span class="code-comment"># 自动获得全面防护！</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3>自定义策略组合</h3>
+                        <div class="code-block animate-in" style="animation-delay: 0.3s;">
+                            <span class="code-keyword">from</span> secnode <span class="code-keyword">import</span> GuardNode, AllOf<br><br>
+                            
+                            guard = GuardNode(<br>
+                            &nbsp;&nbsp;policy=AllOf([<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;PromptInjectionPolicy(),<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;PIIDetectionPolicy(),<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;RateLimitPolicy()<br>
+                            &nbsp;&nbsp;])<br>
+                            )
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 40px;">
+                    <h3>LangGraph工作流集成</h3>
+                    <div class="code-block animate-in" style="animation-delay: 0.4s;">
+                        <span class="code-keyword">from</span> langgraph.graph <span class="code-keyword">import</span> StateGraph<br>
+                        <span class="code-keyword">from</span> secnode <span class="code-keyword">import</span> TricerSecurityState, GuardNode<br><br>
+                        
+                        <span class="code-comment"># 继承安全状态</span><br>
+                        <span class="code-keyword">class</span> AgentState(TricerSecurityState):<br>
+                        &nbsp;&nbsp;query: str<br>
+                        &nbsp;&nbsp;result: str<br><br>
+                        
+                        <span class="code-comment"># 创建安全节点</span><br>
+                        guard = GuardNode.create(<span class="code-string">"balanced"</span>)<br><br>
+                        
+                        <span class="code-comment"># 构建安全工作流</span><br>
+                        workflow = StateGraph(AgentState)<br>
+                        workflow.add_node(<span class="code-string">"security"</span>, guard.invoke)<br>
+                        workflow.add_node(<span class="code-string">"agent"</span>, my_agent)<br>
+                        workflow.add_edge(<span class="code-string">"security"</span>, <span class="code-string">"agent"</span>)<br>
+                        workflow.set_entry_point(<span class="code-string">"security"</span>)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: 性能数据 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>卓越的性能表现</h2>
+                <p class="subtitle">安全不应成为性能瓶颈</p>
+                
+                <div class="three-columns" style="margin-top: 60px;">
+                    <div class="card animate-in" style="animation-delay: 0.2s; text-align: center;">
+                        <h3>⚡ 延迟</h3>
+                        <div class="stat-number" style="font-size: 48px;">&lt;10ms</div>
+                        <p>端到端安全检查</p>
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                            <p style="margin: 5px 0; font-size: 14px;">Performance: &lt;5ms</p>
+                            <p style="margin: 5px 0; font-size: 14px;">Balanced: &lt;10ms</p>
+                            <p style="margin: 5px 0; font-size: 14px;">Maximum: &lt;50ms</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.3s; text-align: center;">
+                        <h3>📊 吞吐量</h3>
+                        <div class="stat-number" style="font-size: 48px;">10K+</div>
+                        <p>请求/秒</p>
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                            <p style="margin: 5px 0; font-size: 14px;">CPU: 4 cores</p>
+                            <p style="margin: 5px 0; font-size: 14px;">内存: &lt;100MB</p>
+                            <p style="margin: 5px 0; font-size: 14px;">并发: 1000+</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.4s; text-align: center;">
+                        <h3>🎯 准确性</h3>
+                        <div class="stat-number" style="font-size: 48px;">99.8%</div>
+                        <p>威胁检测率</p>
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                            <p style="margin: 5px 0; font-size: 14px;">误报率: &lt;5%</p>
+                            <p style="margin: 5px 0; font-size: 14px;">漏报率: &lt;0.2%</p>
+                            <p style="margin: 5px 0; font-size: 14px;">F1分数: 0.97</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="highlight-box animate-in" style="animation-delay: 0.5s;">
+                    <h3>性能对比</h3>
+                    <p>相比传统Guardrails，延迟减少95%，吞吐量提升10倍</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: 未来路线图 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2>发展路线图</h2>
+                <p class="subtitle">持续创新，引领AI安全未来</p>
+                
+                <div class="timeline">
+                    <div class="timeline-line"></div>
+                    
+                    <div class="timeline-item animate-in" style="animation-delay: 0.2s;">
+                        <div class="timeline-dot"></div>
+                        <div class="card">
+                            <h3>Q1 2024 - 基础强化</h3>
+                            <ul style="list-style: disc; padding-left: 20px;">
+                                <li>零配置体验优化</li>
+                                <li>性能提升至亚毫秒级</li>
+                                <li>更友好的错误提示</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item animate-in" style="animation-delay: 0.3s;">
+                        <div class="timeline-dot"></div>
+                        <div class="card">
+                            <h3>Q2 2024 - 智能进化</h3>
+                            <ul style="list-style: disc; padding-left: 20px;">
+                                <li>自适应策略学习</li>
+                                <li>威胁情报网络</li>
+                                <li>可视化配置界面</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item animate-in" style="animation-delay: 0.4s;">
+                        <div class="timeline-dot"></div>
+                        <div class="card">
+                            <h3>Q3 2024 - 企业就绪</h3>
+                            <ul style="list-style: disc; padding-left: 20px;">
+                                <li>多租户管理平台</li>
+                                <li>合规自动化(SOC2/GDPR)</li>
+                                <li>高级分析仪表盘</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item animate-in" style="animation-delay: 0.5s;">
+                        <div class="timeline-dot"></div>
+                        <div class="card">
+                            <h3>Q4 2024 - 生态系统</h3>
+                            <ul style="list-style: disc; padding-left: 20px;">
+                                <li>策略市场</li>
+                                <li>社区贡献平台</li>
+                                <li>企业级SLA支持</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 14: 行动号召 -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px; text-align: center;">
+                <h1 style="font-size: 64px; margin-bottom: 40px;" class="animate-in">立即开始保护您的AI系统</h1>
+                
+                <div class="code-block animate-in" style="animation-delay: 0.3s; max-width: 600px; margin: 0 auto;">
+                    <span class="code-comment"># 安装SecNode</span><br>
+                    pip install secnode<br><br>
+                    
+                    <span class="code-comment"># 一行代码启动防护</span><br>
+                    <span class="code-keyword">from</span> secnode <span class="code-keyword">import</span> WrapperNode<br>
+                    @WrapperNode.protect()<br>
+                    <span class="code-keyword">def</span> my_ai(): ...
+                </div>
+                
+                <div class="three-columns" style="margin-top: 60px;">
+                    <div class="card animate-in" style="animation-delay: 0.4s;">
+                        <h3>🚀 快速开始</h3>
+                        <p>5分钟完成集成</p>
+                        <p style="font-size: 16px; color: #888;">无需改造现有架构</p>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.5s;">
+                        <h3>📚 完整文档</h3>
+                        <p>详细指南与示例</p>
+                        <p style="font-size: 16px; color: #888;">secnode.tricer.ai</p>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.6s;">
+                        <h3>💬 社区支持</h3>
+                        <p>活跃的开发者社区</p>
+                        <p style="font-size: 16px; color: #888;">Discord & GitHub</p>
+                    </div>
+                </div>
+                
+                <div class="highlight-box animate-in" style="animation-delay: 0.7s; margin-top: 60px;">
+                    <h2 style="color: white;">Security as a Node</h2>
+                    <p style="font-size: 24px;">让AI安全变得简单、高效、智能</p>
+                    <p style="margin-top: 30px; font-size: 18px;">
+                        <strong>GitHub:</strong> github.com/tricer-ai/secnode | 
+                        <strong>联系我们:</strong> hello@tricer.ai
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation -->
+    <div class="nav">
+        <button onclick="previousSlide()">← 上一页</button>
+        <span id="slideNumber">1 / 14</span>
+        <button onclick="nextSlide()">下一页 →</button>
+    </div>
+    
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            slides[currentSlide].classList.add('prev');
+            
+            currentSlide = (n + totalSlides) % totalSlides;
+            
+            slides[currentSlide].classList.remove('prev');
+            slides[currentSlide].classList.add('active');
+            
+            // Update slide number
+            document.getElementById('slideNumber').textContent = `${currentSlide + 1} / ${totalSlides}`;
+            
+            // Update progress bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+            
+            // Reset animations for new slide
+            const animatedElements = slides[currentSlide].querySelectorAll('.animate-in');
+            animatedElements.forEach(el => {
+                el.style.animation = 'none';
+                setTimeout(() => {
+                    el.style.animation = '';
+                }, 10);
+            });
+        }
+        
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+        
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            }
+        });
+        
+        // Touch/swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) {
+                nextSlide();
+            }
+            if (touchEndX > touchStartX + 50) {
+                previousSlide();
+            }
+        }
+        
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>

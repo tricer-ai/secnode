@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tricer Security Suite: Complete AI Protection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #333;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            background: white;
+            padding: 60px;
+        }
+        
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .slide.prev {
+            transform: translateX(-100%);
+        }
+        
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .nav button {
+            padding: 10px 20px;
+            border: 2px solid #2563eb;
+            background: white;
+            color: #2563eb;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .nav button:hover {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: #2563eb;
+            transition: width 0.5s ease;
+            z-index: 1001;
+        }
+        
+        /* Typography */
+        h1 {
+            font-size: 56px;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 30px;
+            line-height: 1.2;
+        }
+        
+        h2 {
+            font-size: 42px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 25px;
+        }
+        
+        h3 {
+            font-size: 28px;
+            font-weight: 500;
+            color: #475569;
+            margin-bottom: 20px;
+        }
+        
+        p {
+            font-size: 20px;
+            line-height: 1.6;
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+        
+        .subtitle {
+            font-size: 24px;
+            color: #94a3b8;
+            font-weight: 300;
+        }
+        
+        /* Grid layouts */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            width: 100%;
+            max-width: 1400px;
+        }
+        
+        .three-columns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            width: 100%;
+            max-width: 1400px;
+        }
+        
+        /* Cards */
+        .card {
+            background: #f8fafc;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+        
+        /* Special cards */
+        .secnode-card {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 2px solid #3b82f6;
+        }
+        
+        .dragonsec-card {
+            background: linear-gradient(135deg, #f3e7fc 0%, #e9d5ff 100%);
+            border: 2px solid #9333ea;
+        }
+        
+        /* Threat cards */
+        .threat-card {
+            background: white;
+            border-left: 4px solid #ef4444;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .threat-card h4 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+        
+        /* Stats */
+        .stat-box {
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .stat-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-size: 16px;
+            color: #64748b;
+        }
+        
+        /* Code blocks */
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        .code-comment {
+            color: #94a3b8;
+        }
+        
+        .code-keyword {
+            color: #60a5fa;
+        }
+        
+        .code-string {
+            color: #86efac;
+        }
+        
+        .code-function {
+            color: #fbbf24;
+        }
+        
+        /* Architecture diagram */
+        .architecture-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            margin: 40px auto;
+            max-width: 900px;
+        }
+        
+        .arch-layer {
+            width: 100%;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .arch-connector {
+            width: 3px;
+            height: 30px;
+            background: #64748b;
+            margin: -10px auto;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+        
+        .animate-in {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Title slide */
+        .title-slide {
+            background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+            color: white;
+            text-align: center;
+        }
+        
+        .title-slide h1 {
+            color: white;
+            font-size: 64px;
+            margin-bottom: 30px;
+        }
+        
+        .title-slide .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 28px;
+        }
+        
+        /* Highlight box */
+        .highlight-box {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .highlight-box h3 {
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        /* Feature list */
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li:before {
+            content: '✓';
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 12px;
+            font-size: 20px;
+        }
+        
+        /* Comparison styles */
+        .vs-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            margin: 40px 0;
+        }
+        
+        .vs-divider {
+            font-size: 36px;
+            font-weight: bold;
+            color: #64748b;
+        }
+        
+        /* Product badges */
+        .product-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .secnode-badge {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .dragonsec-badge {
+            background: #9333ea;
+            color: white;
+        }
+        
+        /* Data source footer */
+        .data-source {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            font-size: 10px;
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            max-width: 400px;
+            text-align: right;
+        }
+        
+        /* Solution architecture */
+        .solution-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 40px auto;
+            max-width: 1000px;
+        }
+        
+        .solution-node {
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            min-width: 150px;
+        }
+        
+        .arrow {
+            font-size: 30px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress" id="progress"></div>
+    <div class="container">
+        <!-- Slide 1: Title -->
+        <div class="slide active title-slide">
+            <div>
+                <h1 class="animate-in">Tricer Security Suite</h1>
+                <p class="subtitle animate-in" style="animation-delay: 0.3s;">Complete AI Security Solution</p>
+                <div style="margin-top: 60px;" class="animate-in" style="animation-delay: 0.6s;">
+                    <p style="font-size: 20px; color: rgba(255, 255, 255, 0.8);">
+                        DragonSec Gateway + SecNode Framework
+                    </p>
+                    <p style="font-size: 16px; color: rgba(255, 255, 255, 0.7); margin-top: 20px;">
+                        Enterprise-Grade Protection for AI Applications
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: The AI Security Challenge -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2 class="animate-in">The AI Security Challenge</h2>
+                <p class="subtitle animate-in" style="animation-delay: 0.2s;">Organizations face unprecedented security risks with AI adoption</p>
+                
+                <div class="three-columns" style="margin-top: 50px;">
+                    <div class="threat-card animate-in" style="animation-delay: 0.3s;">
+                        <h4>🔓 Prompt Injection</h4>
+                        <p style="font-size: 16px;">Attackers manipulate AI behavior through crafted inputs</p>
+                    </div>
+                    <div class="threat-card animate-in" style="animation-delay: 0.4s;">
+                        <h4>📊 Data Leakage</h4>
+                        <p style="font-size: 16px;">Sensitive information exposed through AI responses</p>
+                    </div>
+                    <div class="threat-card animate-in" style="animation-delay: 0.5s;">
+                        <h4>⚠️ Compliance Risk</h4>
+                        <p style="font-size: 16px;">Violations of GDPR, HIPAA, and other regulations</p>
+                    </div>
+                </div>
+                
+                <div class="highlight-box animate-in" style="animation-delay: 0.6s; margin-top: 40px;">
+                    <h3>The Problem</h3>
+                    <p>Traditional security tools weren't designed for AI-specific threats</p>
+                    <p style="font-size: 16px; opacity: 0.9; margin-top: 10px;">You need specialized solutions for AI security</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Our Solution -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2 class="animate-in">Tricer's Two-Layer Defense</h2>
+                <p class="subtitle animate-in" style="animation-delay: 0.2s;">Comprehensive protection at every level</p>
+                
+                <div class="solution-flow animate-in" style="animation-delay: 0.3s;">
+                    <div class="solution-node" style="background: linear-gradient(135deg, #9333ea, #7c3aed);">
+                        User/App
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="solution-node pulse" style="background: linear-gradient(135deg, #9333ea, #a855f7);">
+                        DragonSec<br>Gateway
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="solution-node pulse" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                        SecNode<br>Protection
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="solution-node" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        AI/LLM
+                    </div>
+                </div>
+                
+                <div class="content-grid" style="margin-top: 50px;">
+                    <div class="card dragonsec-card animate-in" style="animation-delay: 0.5s;">
+                        <span class="product-badge dragonsec-badge">DragonSec</span>
+                        <h3>Security Gateway</h3>
+                        <p style="font-size: 16px; margin-top: 15px;">
+                            <strong>Enterprise Control Layer</strong>
+                        </p>
+                        <ul class="feature-list">
+                            <li>Centralized proxy for all AI calls</li>
+                            <li>User authentication & authorization</li>
+                            <li>Request logging & monitoring</li>
+                            <li>Custom security rules management</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card secnode-card animate-in" style="animation-delay: 0.6s;">
+                        <span class="product-badge secnode-badge">SecNode</span>
+                        <h3>Security Framework</h3>
+                        <p style="font-size: 16px; margin-top: 15px;">
+                            <strong>Deep Protection Layer</strong>
+                        </p>
+                        <ul class="feature-list">
+                            <li>Graph-native security nodes</li>
+                            <li>10+ built-in security policies</li>
+                            <li>Sub-10ms latency checks</li>
+                            <li>Context-aware protection</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: DragonSec Deep Dive -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2 class="animate-in">
+                    <span class="product-badge dragonsec-badge">DragonSec</span>
+                    AI Security Gateway
+                </h2>
+                <p class="subtitle animate-in" style="animation-delay: 0.2s;">Enterprise-grade proxy and management platform</p>
+                
+                <div class="architecture-diagram animate-in" style="animation-delay: 0.3s;">
+                    <div class="arch-layer" style="background: linear-gradient(135deg, #f0e6ff, #e9d5ff);">
+                        <h4>🌐 Web Dashboard</h4>
+                        <p style="font-size: 16px;">React-based management console with real-time monitoring</p>
+                    </div>
+                    
+                    <div class="arch-connector"></div>
+                    
+                    <div class="arch-layer" style="background: linear-gradient(135deg, #fce7f3, #fbcfe8);">
+                        <h4>🔐 Authentication Layer</h4>
+                        <p style="font-size: 16px;">Supabase Auth with project-based access control</p>
+                    </div>
+                    
+                    <div class="arch-connector"></div>
+                    
+                    <div class="arch-layer" style="background: linear-gradient(135deg, #e0e7ff, #c7d2fe);">
+                        <h4>⚡ LLM Proxy Engine</h4>
+                        <p style="font-size: 16px;">LiteLLM-powered unified API for all AI providers</p>
+                    </div>
+                    
+                    <div class="arch-connector"></div>
+                    
+                    <div class="arch-layer" style="background: linear-gradient(135deg, #dcfce7, #bbf7d0);">
+                        <h4>💾 Data Layer</h4>
+                        <p style="font-size: 16px;">Supabase PostgreSQL with real-time updates</p>
+                    </div>
+                </div>
+                
+                <div class="code-block animate-in" style="animation-delay: 0.5s;">
+                    <span class="code-comment"># Simple integration with any LLM</span><br>
+                    curl -X POST https://your-dragonsec.com/proxy/openai/v1/chat/completions \<br>
+                    &nbsp;&nbsp;-H <span class="code-string">"Authorization: Bearer YOUR_PROJECT_KEY"</span> \<br>
+                    &nbsp;&nbsp;-H <span class="code-string">"Content-Type: application/json"</span> \<br>
+                    &nbsp;&nbsp;-d '{"model": "gpt-4", "messages": [...]}'
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: SecNode Deep Dive -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2 class="animate-in">
+                    <span class="product-badge secnode-badge">SecNode</span>
+                    Security Framework
+                </h2>
+                <p class="subtitle animate-in" style="animation-delay: 0.2s;">Graph-native security for AI agents</p>
+                
+                <div style="margin-top: 40px;">
+                    <h3 style="font-size: 24px; margin-bottom: 20px;">Two Powerful Approaches</h3>
+                    
+                    <div class="content-grid">
+                        <div class="card animate-in" style="animation-delay: 0.3s;">
+                            <h4>🛡️ WrapperNode</h4>
+                            <p style="font-size: 16px; color: #64748b; margin: 15px 0;">One-line protection for any function</p>
+                            <div class="code-block">
+                                @WrapperNode.<span class="code-function">protect</span>()<br>
+                                <span class="code-keyword">def</span> <span class="code-function">chat</span>(msg):<br>
+                                &nbsp;&nbsp;<span class="code-keyword">return</span> llm.generate(msg)
+                            </div>
+                        </div>
+                        
+                        <div class="card animate-in" style="animation-delay: 0.4s;">
+                            <h4>⚡ GuardNode</h4>
+                            <p style="font-size: 16px; color: #64748b; margin: 15px 0;">Graph nodes for complex workflows</p>
+                            <div class="code-block">
+                                guard = GuardNode.<span class="code-function">create</span>(<span class="code-string">"balanced"</span>)<br>
+                                workflow.<span class="code-function">add_node</span>(<span class="code-string">"security"</span>, guard)<br>
+                                workflow.<span class="code-function">add_edge</span>(<span class="code-string">"security"</span>, <span class="code-string">"agent"</span>)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="three-columns" style="margin-top: 40px;">
+                    <div class="stat-box animate-in" style="animation-delay: 0.5s;">
+                        <div class="stat-number">&lt;10ms</div>
+                        <div class="stat-label">Security Check Latency</div>
+                    </div>
+                    <div class="stat-box animate-in" style="animation-delay: 0.6s;">
+                        <div class="stat-number">10+</div>
+                        <div class="stat-label">Built-in Policies</div>
+                    </div>
+                    <div class="stat-box animate-in" style="animation-delay: 0.7s;">
+                        <div class="stat-number">95%</div>
+                        <div class="stat-label">Threat Detection Rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Integration Architecture -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2 class="animate-in">Complete Architecture</h2>
+                <p class="subtitle animate-in" style="animation-delay: 0.2s;">How DragonSec and SecNode work together</p>
+                
+                <div style="margin: 40px auto; text-align: center;">
+                    <svg width="900" height="500" viewBox="0 0 900 500">
+                        <defs>
+                            <linearGradient id="dragonsecGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#9333ea;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="secnodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+                            </linearGradient>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+                            </marker>
+                        </defs>
+                        
+                        <!-- User Layer -->
+                        <rect x="50" y="20" width="800" height="80" fill="#f8fafc" rx="8" stroke="#e2e8f0" stroke-width="2"/>
+                        <text x="450" y="50" text-anchor="middle" font-size="18" font-weight="600" fill="#1e293b">Applications & Users</text>
+                        <rect x="150" y="55" width="120" height="35" fill="#94a3b8" rx="5"/>
+                        <text x="210" y="77" text-anchor="middle" fill="white" font-size="14">Web Apps</text>
+                        <rect x="300" y="55" width="120" height="35" fill="#94a3b8" rx="5"/>
+                        <text x="360" y="77" text-anchor="middle" fill="white" font-size="14">Mobile Apps</text>
+                        <rect x="450" y="55" width="120" height="35" fill="#94a3b8" rx="5"/>
+                        <text x="510" y="77" text-anchor="middle" fill="white" font-size="14">Internal Tools</text>
+                        <rect x="600" y="55" width="120" height="35" fill="#94a3b8" rx="5"/>
+                        <text x="660" y="77" text-anchor="middle" fill="white" font-size="14">API Clients</text>
+                        
+                        <!-- Arrow down -->
+                        <line x1="450" y1="100" x2="450" y2="130" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- DragonSec Layer -->
+                        <rect x="50" y="140" width="800" height="120" fill="url(#dragonsecGrad)" rx="8" opacity="0.1"/>
+                        <rect x="50" y="140" width="800" height="120" fill="none" stroke="url(#dragonsecGrad)" stroke-width="3" rx="8"/>
+                        <text x="450" y="170" text-anchor="middle" font-size="20" font-weight="700" fill="#9333ea">DragonSec Gateway</text>
+                        
+                        <rect x="120" y="190" width="160" height="50" fill="#9333ea" rx="5"/>
+                        <text x="200" y="210" text-anchor="middle" fill="white" font-size="13">Authentication</text>
+                        <text x="200" y="227" text-anchor="middle" fill="white" font-size="11">Supabase Auth</text>
+                        
+                        <rect x="310" y="190" width="160" height="50" fill="#9333ea" rx="5"/>
+                        <text x="390" y="210" text-anchor="middle" fill="white" font-size="13">Proxy & Routing</text>
+                        <text x="390" y="227" text-anchor="middle" fill="white" font-size="11">LiteLLM Engine</text>
+                        
+                        <rect x="500" y="190" width="160" height="50" fill="#9333ea" rx="5"/>
+                        <text x="580" y="210" text-anchor="middle" fill="white" font-size="13">Monitoring</text>
+                        <text x="580" y="227" text-anchor="middle" fill="white" font-size="11">Real-time Logs</text>
+                        
+                        <rect x="690" y="190" width="110" height="50" fill="#9333ea" rx="5"/>
+                        <text x="745" y="210" text-anchor="middle" fill="white" font-size="13">Rules</text>
+                        <text x="745" y="227" text-anchor="middle" fill="white" font-size="11">Custom Policies</text>
+                        
+                        <!-- Arrow down -->
+                        <line x1="450" y1="260" x2="450" y2="290" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- SecNode Layer -->
+                        <rect x="50" y="300" width="800" height="100" fill="url(#secnodeGrad)" rx="8" opacity="0.1"/>
+                        <rect x="50" y="300" width="800" height="100" fill="none" stroke="url(#secnodeGrad)" stroke-width="3" rx="8"/>
+                        <text x="450" y="330" text-anchor="middle" font-size="20" font-weight="700" fill="#3b82f6">SecNode Protection</text>
+                        
+                        <rect x="150" y="350" width="140" height="35" fill="#3b82f6" rx="5"/>
+                        <text x="220" y="372" text-anchor="middle" fill="white" font-size="12">Prompt Injection</text>
+                        
+                        <rect x="310" y="350" width="140" height="35" fill="#3b82f6" rx="5"/>
+                        <text x="380" y="372" text-anchor="middle" fill="white" font-size="12">PII Detection</text>
+                        
+                        <rect x="470" y="350" width="140" height="35" fill="#3b82f6" rx="5"/>
+                        <text x="540" y="372" text-anchor="middle" fill="white" font-size="12">Rate Limiting</text>
+                        
+                        <rect x="630" y="350" width="140" height="35" fill="#3b82f6" rx="5"/>
+                        <text x="700" y="372" text-anchor="middle" fill="white" font-size="12">Content Filter</text>
+                        
+                        <!-- Arrow down -->
+                        <line x1="450" y1="400" x2="450" y2="430" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- LLM Layer -->
+                        <rect x="50" y="440" width="800" height="50" fill="#dcfce7" rx="8" stroke="#86efac" stroke-width="2"/>
+                        <text x="450" y="470" text-anchor="middle" font-size="18" font-weight="600" fill="#059669">AI/LLM Services (OpenAI, Anthropic, etc.)</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Key Benefits -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2 class="animate-in">Why Tricer Security Suite?</h2>
+                <p class="subtitle animate-in" style="animation-delay: 0.2s;">Complete protection with best-in-class components</p>
+                
+                <div class="three-columns" style="margin-top: 50px;">
+                    <div class="card animate-in" style="animation-delay: 0.3s;">
+                        <h3 style="font-size: 24px;">🚀 Easy Integration</h3>
+                        <p style="font-size: 16px; margin-top: 15px;">
+                            <strong>DragonSec:</strong> Drop-in proxy replacement<br>
+                            <strong>SecNode:</strong> One-line code protection
+                        </p>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.4s;">
+                        <h3 style="font-size: 24px;">⚡ High Performance</h3>
+                        <p style="font-size: 16px; margin-top: 15px;">
+                            <strong>DragonSec:</strong> Async streaming support<br>
+                            <strong>SecNode:</strong> <10ms security checks
+                        </p>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.5s;">
+                        <h3 style="font-size: 24px;">🔒 Enterprise Ready</h3>
+                        <p style="font-size: 16px; margin-top: 15px;">
+                            <strong>DragonSec:</strong> Multi-tenant, SOC2 ready<br>
+                            <strong>SecNode:</strong> Graph-native, context-aware
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="highlight-box animate-in" style="animation-delay: 0.6s; margin-top: 40px;">
+                    <h3>Complete Solution</h3>
+                    <p>Gateway-level control + Framework-level protection = Unmatched AI security</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Implementation Examples -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2 class="animate-in">Implementation Examples</h2>
+                <p class="subtitle animate-in" style="animation-delay: 0.2s;">See how easy it is to secure your AI</p>
+                
+                <div style="margin-top: 40px;">
+                    <h3 style="font-size: 24px; margin-bottom: 20px;">
+                        <span class="product-badge dragonsec-badge">DragonSec</span>
+                        Gateway Setup
+                    </h3>
+                    <div class="code-block animate-in" style="animation-delay: 0.3s;">
+                        <span class="code-comment"># 1. Deploy DragonSec (one command)</span><br>
+                        sudo ./deployment/deploy.sh<br><br>
+                        
+                        <span class="code-comment"># 2. Create project and get API key from dashboard</span><br>
+                        <span class="code-comment"># 3. Update your app to use DragonSec endpoint</span><br>
+                        openai.api_base = <span class="code-string">"https://your-dragonsec.com/proxy/openai/v1"</span><br>
+                        openai.api_key = <span class="code-string">"YOUR_PROJECT_KEY"</span>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 40px;">
+                    <h3 style="font-size: 24px; margin-bottom: 20px;">
+                        <span class="product-badge secnode-badge">SecNode</span>
+                        Protection Layer
+                    </h3>
+                    <div class="code-block animate-in" style="animation-delay: 0.5s;">
+                        <span class="code-comment"># Add SecNode protection to DragonSec proxy handler</span><br>
+                        <span class="code-keyword">from</span> secnode <span class="code-keyword">import</span> WrapperNode<br><br>
+                        
+                        @WrapperNode.<span class="code-function">protect</span>(level=<span class="code-string">"maximum_security"</span>)<br>
+                        <span class="code-keyword">async def</span> <span class="code-function">proxy_handler</span>(request):<br>
+                        &nbsp;&nbsp;<span class="code-comment"># Your existing DragonSec proxy logic</span><br>
+                        &nbsp;&nbsp;<span class="code-keyword">return</span> await forward_to_llm(request)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Deployment Options -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px;">
+                <h2 class="animate-in">Flexible Deployment</h2>
+                <p class="subtitle animate-in" style="animation-delay: 0.2s;">Choose the setup that fits your needs</p>
+                
+                <div class="three-columns" style="margin-top: 50px;">
+                    <div class="card animate-in" style="animation-delay: 0.3s;">
+                        <h3>🌤️ Cloud SaaS</h3>
+                        <p style="font-size: 16px; margin-top: 15px;">
+                            Fully managed service<br>
+                            Zero maintenance<br>
+                            Auto-scaling<br>
+                            99.9% SLA
+                        </p>
+                        <div style="margin-top: 20px; padding: 10px; background: #f0fdf4; border-radius: 8px;">
+                            <p style="font-size: 14px; color: #059669; margin: 0;">Best for: Quick start</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.4s;">
+                        <h3>🏢 Private Cloud</h3>
+                        <p style="font-size: 16px; margin-top: 15px;">
+                            Your cloud account<br>
+                            Data sovereignty<br>
+                            Custom configuration<br>
+                            Managed updates
+                        </p>
+                        <div style="margin-top: 20px; padding: 10px; background: #eff6ff; border-radius: 8px;">
+                            <p style="font-size: 14px; color: #1e40af; margin: 0;">Best for: Compliance</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.5s;">
+                        <h3>🔒 On-Premise</h3>
+                        <p style="font-size: 16px; margin-top: 15px;">
+                            Full control<br>
+                            Air-gapped option<br>
+                            Custom integration<br>
+                            Enterprise support
+                        </p>
+                        <div style="margin-top: 20px; padding: 10px; background: #fef3c7; border-radius: 8px;">
+                            <p style="font-size: 14px; color: #92400e; margin: 0;">Best for: Maximum control</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="highlight-box animate-in" style="animation-delay: 0.6s; margin-top: 40px;">
+                    <p style="font-size: 18px;">All deployment options include both DragonSec and SecNode</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Call to Action -->
+        <div class="slide">
+            <div style="width: 100%; max-width: 1400px; text-align: center;">
+                <h1 style="font-size: 56px; margin-bottom: 40px;" class="animate-in">Start Securing Your AI Today</h1>
+                
+                <div class="content-grid" style="margin-top: 50px;">
+                    <div class="card dragonsec-card animate-in" style="animation-delay: 0.3s;">
+                        <span class="product-badge dragonsec-badge">DragonSec</span>
+                        <h3>Quick Deploy</h3>
+                        <div class="code-block" style="margin-top: 20px;">
+                            git clone dragonsec_mono<br>
+                            sudo ./deployment/deploy.sh
+                        </div>
+                        <p style="font-size: 14px; margin-top: 15px;">
+                            5-minute setup on any Linux server
+                        </p>
+                    </div>
+                    
+                    <div class="card secnode-card animate-in" style="animation-delay: 0.4s;">
+                        <span class="product-badge secnode-badge">SecNode</span>
+                        <h3>Install Package</h3>
+                        <div class="code-block" style="margin-top: 20px;">
+                            pip install secnode<br>
+                            <span class="code-comment"># Add protection in 1 line</span>
+                        </div>
+                        <p style="font-size: 14px; margin-top: 15px;">
+                            Works with any Python AI app
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="highlight-box animate-in" style="animation-delay: 0.5s; margin-top: 50px;">
+                    <h2 style="color: white;">Tricer Security Suite</h2>
+                    <p style="font-size: 24px;">Enterprise AI Security Made Simple</p>
+                    <p style="margin-top: 30px; font-size: 18px;">
+                        <strong>GitHub:</strong> github.com/tricer-ai | 
+                        <strong>Contact:</strong> security@tricer.ai
+                    </p>
+                </div>
+                
+                <div class="three-columns" style="margin-top: 40px;">
+                    <div class="card animate-in" style="animation-delay: 0.6s;">
+                        <h4>📚 Documentation</h4>
+                        <p style="font-size: 14px;">Comprehensive guides</p>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.7s;">
+                        <h4>💬 Support</h4>
+                        <p style="font-size: 14px;">Discord & GitHub</p>
+                    </div>
+                    
+                    <div class="card animate-in" style="animation-delay: 0.8s;">
+                        <h4>🚀 Free Trial</h4>
+                        <p style="font-size: 14px;">30-day enterprise trial</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation -->
+    <div class="nav">
+        <button onclick="previousSlide()">← Previous</button>
+        <span id="slideNumber">1 / 10</span>
+        <button onclick="nextSlide()">Next →</button>
+    </div>
+    
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            slides[currentSlide].classList.add('prev');
+            
+            currentSlide = (n + totalSlides) % totalSlides;
+            
+            slides[currentSlide].classList.remove('prev');
+            slides[currentSlide].classList.add('active');
+            
+            // Update slide number
+            document.getElementById('slideNumber').textContent = `${currentSlide + 1} / ${totalSlides}`;
+            
+            // Update progress bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+            
+            // Reset animations for new slide
+            const animatedElements = slides[currentSlide].querySelectorAll('.animate-in');
+            animatedElements.forEach(el => {
+                el.style.animation = 'none';
+                setTimeout(() => {
+                    el.style.animation = '';
+                }, 10);
+            });
+        }
+        
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+        
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            } else if (e.key === 'Escape') {
+                showSlide(0);
+            }
+        });
+        
+        // Touch/swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) {
+                nextSlide();
+            }
+            if (touchEndX > touchStartX + 50) {
+                previousSlide();
+            }
+        }
+        
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>

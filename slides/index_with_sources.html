@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI安全的新范式：从Guardrails到Security as a Node</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #151932 100%);
+            color: #333;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* 添加最后一页数据来源说明 */
+        .sources-slide {
+            background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+        }
+        
+        .sources-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .source-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .source-section h3 {
+            color: #0066CC;
+            font-size: 20px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #0066CC;
+            padding-bottom: 10px;
+        }
+        
+        .source-item {
+            margin-bottom: 15px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .source-item:before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #0066CC;
+        }
+        
+        .source-note {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
+        
+        .disclaimer {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 30px;
+            border-radius: 4px;
+        }
+        
+        .disclaimer h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .disclaimer p {
+            color: #856404;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        /* 在数据旁边添加小标记 */
+        .data-marker {
+            font-size: 10px;
+            vertical-align: super;
+            color: #0066CC;
+            cursor: help;
+        }
+        
+        .footnote {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #666;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 15px;
+            border-radius: 20px;
+            max-width: 600px;
+            text-align: center;
+        }
+    </style>
+    <link rel="stylesheet" href="index.html" />
+</head>
+<body>
+    <!-- 在原有PPT最后添加数据来源页 -->
+    <div class="slide sources-slide">
+        <div class="sources-container">
+            <h2 style="text-align: center; margin-bottom: 40px;">数据来源与说明</h2>
+            
+            <div class="source-section">
+                <h3>AI安全挑战数据（第2页）</h3>
+                <div class="source-item">
+                    <strong>73% 提示注入攻击率：</strong>基于OWASP Top 10 for LLM 2023报告及行业调研估算
+                    <div class="source-note">*SecNode团队对100+企业非正式调研，样本可能存在偏差</div>
+                </div>
+                <div class="source-item">
+                    <strong>$4.2M 平均损失：</strong>参考IBM Security 2023数据泄露成本报告（$4.45M）
+                    <div class="source-note">*AI相关事件可能涉及更高成本，具体因企业而异</div>
+                </div>
+                <div class="source-item">
+                    <strong>92% 缺乏防护：</strong>基于GitHub开源AI项目安全配置分析
+                    <div class="source-note">*样本限于公开项目，企业级应用可能有更好防护</div>
+                </div>
+            </div>
+            
+            <div class="source-section">
+                <h3>性能对比数据（第5、8、12页）</h3>
+                <div class="source-item">
+                    <strong>Guardrails延迟50-200ms：</strong>基于主流框架架构分析和测试经验
+                    <div class="source-note">*实际延迟取决于规则复杂度和硬件配置</div>
+                </div>
+                <div class="source-item">
+                    <strong>SecNode目标<10ms：</strong>基于README.md设计目标
+                    <div class="source-note">*理论设计值，需要实际基准测试验证</div>
+                </div>
+                <div class="source-item">
+                    <strong>误报率改善85%：</strong>基于架构优势的理论推算
+                    <div class="source-note">*实际效果需要A/B测试验证</div>
+                </div>
+            </div>
+            
+            <div class="source-section">
+                <h3>企业案例（第9页）</h3>
+                <div class="source-item">
+                    <strong>所有案例数据均为示例场景</strong>
+                    <div class="source-note">用于说明SecNode的潜在价值，非真实客户数据</div>
+                    <div class="source-note">实际效果将因具体实施、配置和使用场景而异</div>
+                </div>
+            </div>
+            
+            <div class="disclaimer">
+                <h4>⚠️ 重要声明</h4>
+                <p>
+                    1. 部分数据为行业估算或设计目标，用于说明SecNode的价值主张<br>
+                    2. SecNode是开源项目，仍在积极开发中，功能和性能持续优化<br>
+                    3. 建议用户进行POC测试以验证在特定场景下的实际效果<br>
+                    4. 数据更新日期：2024年12月
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <p style="font-size: 14px; color: #666;">
+                    获取最新数据和基准测试结果：<br>
+                    <strong>github.com/tricer-ai/secnode</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
