@@ -304,3 +304,7 @@ pip-wheel-metadata/
 run-local.sh
 debug.sh
 test-local.sh
+
+*.crush
+*.crush.log
+crush.json
