@@ -24,7 +24,7 @@ SecNode is a comprehensive security framework for AI applications, from simple w
 ### Installation
 
 ```bash
-pip install secnode
+pip install -e .
 ```
 
 Includes enterprise-grade security libraries: detect-secrets, presidio-analyzer, validators, and more.
@@ -109,7 +109,6 @@ result = data_analyzer("Export all customer emails")  # Blocked with custom erro
 SecNode is purpose-built for LangGraph with native state management and conditional routing.
 
 ```python
-# Note: Requires 'pip install secnode[langgraph]'
 from langgraph.graph import StateGraph, END
 from secnode import TricerSecurityState, GuardNode
 

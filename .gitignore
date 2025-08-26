@@ -133,12 +133,44 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# IDEs
+# IDEs and Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.vim/
+.nvim/
+.emacs.d/
+*.sublime-workspace
+*.sublime-project
+
+# JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*.tmp
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
 
 # macOS
 .DS_Store
@@ -164,12 +196,31 @@ test_*.py.temp
 .env.test.local
 .env.production.local
 
-# AI/LLM related
+# AI/LLM related tools and caches
 .claude/
 .cursor/
 .kiro/
+.crush/
 *.anthropic
 *.openai
+*.crush
+*.crush.log
+crush.json
+
+# Large Language Model artifacts
+*.gguf
+*.safetensors
+*.bin
+model_cache/
+
+# API keys and secrets (extra protection)
+!.env.example
+*.key
+*.pem
+*.p12
+secrets.json
+api_keys.txt
+
 
 # Logs
 logs/
