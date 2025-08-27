@@ -3,7 +3,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**The Native Security Framework for AI Agents**
+**The Graph-Native Security Framework for AI Agents**
 
 SecNode is a comprehensive security framework for AI applications, from simple workflows to complex graph-based agents. Built with a "Security as a Node" philosophy, SecNode provides layered security that scales from basic prompt filtering to advanced multi-agent system protection.
 
