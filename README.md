@@ -399,7 +399,7 @@ stats = guard.get_stats()  # Built-in analytics
 
 ## Contributing
 
-1. Fork & clone: `git clone https://github.com/YOUR_USERNAME/secnode.git`
+1. Fork & clone: `git clone https://github.com/tricer-ai/secnode.git`
 2. Install: `pip install -e .[dev]`
 3. Test: `pytest`
 4. Submit PR with tests and documentation
